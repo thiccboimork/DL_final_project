@@ -57,12 +57,11 @@ interview_chatbot/
 └── README.md
 ```
 
-## 🚀 Setup
+## Setup
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/YOUR_ORG/interview-chatbot.git
-cd interview-chatbot
+git clone https://github.com/YOUR_ORG/DL_final_project.git
 ```
 
 ### 2. Create a virtual environment
@@ -90,7 +89,7 @@ adk web
 
 ---
 
-## 🛠️ Tools Used
+## Tools Used
 
 | Tool | Purpose | Agent |
 |---|---|---|
@@ -99,7 +98,7 @@ adk web
 | `file_io / report_generator` | Write final performance report as PDF | Verifier/Critic |
 | `vector_memory` | Store/retrieve long-term user profiles | All agents |
 
-## 🔒 Guardrails
+## Guardrails
 
 See `guardrails.py` for full list. Summary:
 - Agents may only discuss professional interview and resume topics
@@ -117,12 +116,3 @@ python evaluation/scoring.py
 Reports: success rate, average latency, average token cost, and error categories.
 
 ---
-
-## Team
-
-| Member | Role |
-|---|---|
-| Caitlin Garcia | ADK setup, Orchestrator Agent, Interview Agent, tool integration |
-| Dishita Sharma | Guardrails, Resume Agent, evaluation suite, metrics |
-| Arif Aydar | Proposal writing, project coordination, demo video |
-| Isaac Arellano | Test cases, prompt refinement, feedback report templates |
