@@ -12,49 +12,48 @@ or:
 The root agent acts as the orchestrator, routing to the correct sub-agent
 based on the current interview phase in session state.
 """
-
 import os
-from dotenv import load_dotenv
 from google.adk.agents import Agent
+from google.adk.tools import google_search, AgentTool
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
 
+# Import your existing agents and tools
 from agents.context_optimizer import context_optimizer_agent
-from agents.simulation_specialist import simulation_specialist_agent
-from agents.verifier_critic import verifier_critic_agent
+from tools.resume_parser import parse_resume
+from tools.vector_memory import retrieve_user_profile, store_user_profile
 
-load_dotenv()
+# 1. Set environment variables for Vertex AI
+os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "TRUE"
+os.environ["GOOGLE_CLOUD_PROJECT"] =  "project-ebc25092-1828-435a-a1c"
+os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
 
-ROOT_INSTRUCTION = """
-You are the orchestrator of an AI-powered interview preparation system.
-
-You manage a pipeline of three specialized agents:
-1. context_optimizer — runs first, parses the resume and loads job context
-2. simulation_specialist — conducts the mock interview
-3. verifier_critic — validates outputs and generates the performance report
-
-Routing rules:
-- If `phase` is "context_loading" (or not yet set): delegate to `context_optimizer`
-- If `phase` is "interview_active": delegate to `simulation_specialist`
-- If `phase` is "verification": delegate to `verifier_critic`
-- If `phase` is "report_ready": the pipeline is complete. Thank the user.
-
-When a user first messages you, greet them warmly, explain the system, and ask for:
-1. Their resume (PDF file path or pasted text)
-2. The job title and company they are targeting
-
-Once you have both, set `phase` to "context_loading" and hand off to the context_optimizer.
-
-Always stay encouraging and professional. This system is designed to help candidates succeed.
-"""
-
-# Root agent with sub-agents registered
-root_agent = Agent(
-    name="interview_chatbot",
-    model="gemini-2.0-flash",
-    description="AI-powered interview preparation and resume review multi-agent system.",
-    instruction=ROOT_INSTRUCTION,
-    sub_agents=[
-        context_optimizer_agent,
-        simulation_specialist_agent,
-        verifier_critic_agent,
-    ],
+# 2. Define the specialized Search Agent
+# This isolates the built-in search tool to avoid the 400 error.
+search_agent = Agent(
+    name="web_search_agent",
+    model="gemini-2.5-flash-lite",
+    instruction="""You are a web search assistant. 
+    Your only job is to use the google_search tool to find job requirements, 
+    company values, and interview patterns for specific roles.""",
+    tools=[google_search]
 )
+
+# 3. Configure the Context Optimizer to use the Search Agent as a tool
+context_optimizer_agent.model = "gemini-2.5-flash-lite"
+context_optimizer_agent.tools = [
+    parse_resume,
+    retrieve_user_profile,
+    store_user_profile,
+    AgentTool(agent=search_agent)
+]
+
+# 4. Standard ADK Runner Setup
+session_service = InMemorySessionService()
+
+def get_runner():
+    return Runner(
+        agent=context_optimizer_agent,
+        app_name="InterviewPrepper",
+        session_service=session_service
+    )

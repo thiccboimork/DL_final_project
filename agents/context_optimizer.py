@@ -45,18 +45,28 @@ Focus areas should be a list of 3-5 specific skills or topics the interviewer sh
 based on gaps between the resume and the job description.
 """
 
+from google.adk.agents import Agent
+
+# Note: tools are now assigned in agent.py to avoid circular imports
+
+CONTEXT_OPTIMIZER_INSTRUCTION = """
+You are the Context Optimizer, the first agent in an interview preparation pipeline.
+
+Your job is to:
+1. Call `parse_resume` with the provided resume file path to extract the candidate's skills.
+2. Delegate web searching to the `web_search_agent` tool to find current job requirements and company values.
+3. Compare the candidate's skills against the findings to identify 3-5 specific focus areas.
+4. Optionally call `retrieve_user_profile` to incorporate past performance.
+5. Update the session state with the parsed data and set `phase` to "interview_active".
+
+Rules:
+- You do not search the web yourself; you MUST use the `web_search_agent` for all job/company research.
+- Be concise. When finished, state: "Context loading complete. Handing off to Simulation Specialist."
+"""
+
 context_optimizer_agent = Agent(
     name="context_optimizer",
-    model="gemini-2.0-flash",
-    description=(
-        "Parses the candidate's resume and scrapes the target job/company information. "
-        "Populates the shared session state with structured context and focus areas."
-    ),
+    model="gemini-2.0-flash-001",
+    description="Parses resumes and coordinates job research via the search agent.",
     instruction=CONTEXT_OPTIMIZER_INSTRUCTION,
-    tools=[
-        parse_resume,
-        google_search,
-        retrieve_user_profile,
-        store_user_profile,
-    ],
 )
