@@ -3,6 +3,7 @@ import asyncio
 from agent import get_runner
 from google.genai import types
 from shared_state import InterviewPhase
+import os
 
 st.set_page_config(page_title="Interview Prepper", layout="wide")
 
@@ -22,6 +23,23 @@ if "runner" not in st.session_state:
 # 2. File Upload for Resume
 # --- SIDEBAR STATUS INDICATOR ---
 with st.sidebar:
+    st.header("📄 Candidate Documents")
+    uploaded_file = st.file_uploader("Upload your PDF resume", type="pdf")
+
+    if uploaded_file is not None:
+        # Save the file to a temp folder so the agent can access the path
+        temp_dir = "temp_uploads"
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+            
+        file_path = os.path.join(temp_dir, uploaded_file.name)
+        
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        
+        st.success(f"Loaded: {uploaded_file.name}")
+        # Store the path in session state for the agent to use
+        st.session_state.resume_path = os.path.abspath(file_path)
     st.header("Project Status")
     
     # Define display names using your Enum members as keys
@@ -69,7 +87,14 @@ if prompt := st.chat_input("Say something..."):
             full_response = ""
             
             async def run_chat_logic():
-                content = types.Content(role="user", parts=[types.Part(text=prompt)])
+                context_prefix = ""
+                if "resume_path" in st.session_state:
+                    context_prefix = f"(System Note: The user's resume is located at: {st.session_state.resume_path})\n"
+                
+                # Combine the hidden context with the user's actual message
+                full_prompt = context_prefix + prompt
+                
+                content = types.Content(role="user", parts=[types.Part(text=full_prompt)])
                 
                 async for event in st.session_state.runner.run_async(
                     user_id="user_1", 
