@@ -62,6 +62,12 @@ class SessionState:
     guardrail_flags: list[str] = field(default_factory=list)
     report_path: Optional[str] = None
 
+    # ── State Locking ─────────────────────────────────────────────────────────
+    # Name of the agent currently holding the write lock, or None when free.
+    # Agents must acquire this before writing and release it when done.
+    # Convention: "context_optimizer" | "simulation_specialist" | "verifier_critic"
+    agent_lock: Optional[str] = None
+
     def log_tool_call(self, agent: str, tool: str, args: dict, result: dict):
         """Append a tool call record to the session log."""
         import datetime

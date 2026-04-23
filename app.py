@@ -90,10 +90,16 @@ if prompt := st.chat_input("Say something..."):
             full_response = ""
             
             async def run_chat_logic():
+                # ── Agent routing based on current phase ──────────────────────
                 if st.session_state.current_phase == InterviewPhase.CONTEXT_LOADING:
                     st.session_state.runner.agent = context_optimizer_agent
                 elif st.session_state.current_phase == InterviewPhase.INTERVIEW_ACTIVE:
                     st.session_state.runner.agent = simulation_specialist_agent
+                elif st.session_state.current_phase in (
+                    InterviewPhase.VERIFICATION, InterviewPhase.REPORT_READY
+                ):
+                    from agents.verifier_critic import verifier_critic_agent
+                    st.session_state.runner.agent = verifier_critic_agent
                 context_prefix = ""
                 if "resume_path" in st.session_state:
                     context_prefix = f"(System Note: The user's resume is located at: {st.session_state.resume_path})\n"
@@ -114,28 +120,39 @@ if prompt := st.chat_input("Say something..."):
                         session_id=st.session_state.session_id,
                         app_name="InterviewPrepper"
                     )
-                    if session and hasattr(session.state, 'phase'):
-                        st.session_state.current_phase = session.state.phase
+                    # ── Sync UI phase from session state (handles dict + dataclass) ──
+                    if session:
+                        raw_phase = (
+                            session.state.get("phase")
+                            if isinstance(session.state, dict)
+                            else getattr(session.state, "phase", None)
+                        )
+                        if raw_phase:
+                            try:
+                                st.session_state.current_phase = InterviewPhase(raw_phase)
+                            except ValueError:
+                                pass  # unknown phase value — leave as-is
                     
-                    if event.is_final_response():
+                    if event.is_final_response() and event.content:
                         response_text = event.content.parts[0].text
                         
+                        # ── Text-based handoff detection (fallback) ─────────
                         if "Handing off to Simulation Specialist" in response_text:
-                            # 1. Update the local UI state
                             st.session_state.current_phase = InterviewPhase.INTERVIEW_ACTIVE
-                            
-                            # 2. Update the actual ADK Session State so the next agent sees it
                             session = await st.session_state.runner.session_service.get_session(
-                                user_id="user_1", 
+                                user_id="user_1",
                                 session_id=st.session_state.session_id,
                                 app_name="InterviewPrepper"
                             )
                             if session:
-                                # Check if state is a dict or a dataclass
                                 if isinstance(session.state, dict):
-                                    session.state["phase"] = InterviewPhase.INTERVIEW_ACTIVE.value # Use dict key
+                                    session.state["phase"] = InterviewPhase.INTERVIEW_ACTIVE.value
                                 else:
                                     session.state.phase = InterviewPhase.INTERVIEW_ACTIVE
+
+                        # ── Detect VERIFICATION handoff from Simulation Specialist ──
+                        if "Handing off to Verifier" in response_text or                            "Phase set to VERIFICATION" in response_text:
+                            st.session_state.current_phase = InterviewPhase.VERIFICATION
                         
                         return response_text
             
