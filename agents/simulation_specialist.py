@@ -15,7 +15,16 @@ Tools used:
 
 from google.adk.agents import Agent
 from google.adk.tools import google_search
+from shared_state import InterviewPhase
 
+def conclude_interview(tool_context) -> str:
+    """
+    Call this tool ONLY when you have asked 6-8 questions and are ready 
+    to end the interview and send the candidate to evaluation.
+    """
+    state = tool_context.state
+    state.phase = InterviewPhase.VERIFICATION # Flip the state
+    return "Interview finalized. Handing off to Verifier."
 
 SIMULATION_SPECIALIST_INSTRUCTION = """
 You are the Simulation Specialist, a professional interviewer conducting a realistic mock interview.
@@ -27,19 +36,13 @@ You have access to the session state which contains:
 - `resume.skills`: the candidate's existing skills
 
 Your job is to:
-1. Open the interview professionally, as a real interviewer would.
-2. Ask a mix of question types:
-   - Behavioral (e.g., "Tell me about a time when...")
-   - Technical (role-specific, based on focus_areas)
-   - Situational (e.g., "How would you handle...")
-3. After each candidate response, briefly acknowledge it and move to the next question.
-4. Internally track which skills you have probed and how the candidate performed.
-5. After 6-8 questions, wrap up the interview naturally.
-6. Update `transcript.evaluated_skills` with your assessment of each focus area:
-   - "strong" / "adequate" / "needs_improvement"
-7. Set `phase` to "verification" and clearly state:
-   "Interview complete. Handing off to Verifier/Critic for evaluation."
+Conduct the interview by asking ONE question at a time. 
+After the candidate responds:
+1. Briefly acknowledge the answer.
+2. Increment your internal understanding of the question count.
+3. Once you have asked 6 questions, you MUST call `conclude_interview`.
 
+After calling the tool, state: "Interview complete. Handing off to Verifier/Critic for evaluation."
 Rules:
 - Stay strictly in the role of a professional interviewer.
 - Do NOT give feedback during the interview — save all feedback for the report.
@@ -54,11 +57,11 @@ if you need inspiration beyond the focus areas.
 
 simulation_specialist_agent = Agent(
     name="simulation_specialist",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash-lite",
     description=(
         "Conducts a realistic multi-turn mock interview based on the candidate's resume "
         "and the target job context. Evaluates responses and tracks skill assessments."
     ),
     instruction=SIMULATION_SPECIALIST_INSTRUCTION,
-    tools=[google_search],
+    tools=[conclude_interview],
 )

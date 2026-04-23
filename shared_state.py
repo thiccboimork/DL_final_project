@@ -54,6 +54,7 @@ class SessionState:
     Agents access it via tool_context.state.
     """
     phase: InterviewPhase = InterviewPhase.CONTEXT_LOADING
+    question_count: int = 0
     resume: ResumeData = field(default_factory=ResumeData)
     job_context: JobContext = field(default_factory=JobContext)
     transcript: InterviewTranscript = field(default_factory=InterviewTranscript)

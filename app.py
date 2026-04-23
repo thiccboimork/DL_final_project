@@ -5,6 +5,9 @@ from google.genai import types
 from shared_state import InterviewPhase
 import os
 
+from agents.context_optimizer import context_optimizer_agent
+from agents.simulation_specialist import simulation_specialist_agent
+
 st.set_page_config(page_title="Interview Prepper", layout="wide")
 
 # 1. Initialize ADK Runner and Session in Streamlit
@@ -87,6 +90,10 @@ if prompt := st.chat_input("Say something..."):
             full_response = ""
             
             async def run_chat_logic():
+                if st.session_state.current_phase == InterviewPhase.CONTEXT_LOADING:
+                    st.session_state.runner.agent = context_optimizer_agent
+                elif st.session_state.current_phase == InterviewPhase.INTERVIEW_ACTIVE:
+                    st.session_state.runner.agent = simulation_specialist_agent
                 context_prefix = ""
                 if "resume_path" in st.session_state:
                     context_prefix = f"(System Note: The user's resume is located at: {st.session_state.resume_path})\n"
@@ -111,7 +118,26 @@ if prompt := st.chat_input("Say something..."):
                         st.session_state.current_phase = session.state.phase
                     
                     if event.is_final_response():
-                        return event.content.parts[0].text
+                        response_text = event.content.parts[0].text
+                        
+                        if "Handing off to Simulation Specialist" in response_text:
+                            # 1. Update the local UI state
+                            st.session_state.current_phase = InterviewPhase.INTERVIEW_ACTIVE
+                            
+                            # 2. Update the actual ADK Session State so the next agent sees it
+                            session = await st.session_state.runner.session_service.get_session(
+                                user_id="user_1", 
+                                session_id=st.session_state.session_id,
+                                app_name="InterviewPrepper"
+                            )
+                            if session:
+                                # Check if state is a dict or a dataclass
+                                if isinstance(session.state, dict):
+                                    session.state["phase"] = InterviewPhase.INTERVIEW_ACTIVE.value # Use dict key
+                                else:
+                                    session.state.phase = InterviewPhase.INTERVIEW_ACTIVE
+                        
+                        return response_text
             
             # Run the logic and update the UI
             full_response = asyncio.run(run_chat_logic())

@@ -66,7 +66,7 @@ Rules:
 
 context_optimizer_agent = Agent(
     name="context_optimizer",
-    model="gemini-2.0-flash-001",
+    model="gemini-2.5-flash-lite",
     description="Parses resumes and coordinates job research via the search agent.",
     instruction=CONTEXT_OPTIMIZER_INSTRUCTION,
 )
