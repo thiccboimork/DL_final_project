@@ -21,7 +21,7 @@ from google.adk.sessions import InMemorySessionService
 # Import your existing agents and tools
 from google.adk.runners import Runner
 from agents.context_optimizer import context_optimizer_agent
-from agents.simulation_specialist import simulation_specialist_agent, record_answer, get_transcript_summary, conclude_interview
+from agents.simulation_specialist import simulation_specialist_agent
 from tools.resume_parser import parse_resume
 from tools.vector_memory import retrieve_user_profile, store_user_profile
 
@@ -47,13 +47,6 @@ context_optimizer_agent.tools = [
     parse_resume,
     retrieve_user_profile,
     store_user_profile,
-    AgentTool(agent=search_agent)
-]
-
-context_optimizer_agent.tools = [
-    record_answer, 
-    get_transcript_summary, 
-    conclude_interview,
     AgentTool(agent=search_agent)
 ]
 

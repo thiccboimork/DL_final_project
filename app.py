@@ -26,6 +26,30 @@ if "runner" not in st.session_state:
 # 2. File Upload for Resume
 # --- SIDEBAR STATUS INDICATOR ---
 with st.sidebar:
+    st.divider()
+    st.subheader("🛠️ Developer Tools")
+    if st.button("Skip to Verification"):
+        # 1. Update the local Streamlit state
+        st.session_state.current_phase = InterviewPhase.VERIFICATION
+        
+        # 2. Update the actual ADK Session State so the Agent knows the phase changed
+        async def mock_handoff():
+            session = await st.session_state.runner.session_service.get_session(
+                user_id="user_1", 
+                session_id=st.session_state.session_id,
+                app_name="InterviewPrepper"
+            )
+            if session:
+                # Manually inject the phase and some dummy transcript data
+                if isinstance(session.state, dict):
+                    session.state["phase"] = InterviewPhase.VERIFICATION.value
+                    session.state["question_count"] = 6
+                else:
+                    session.state.phase = InterviewPhase.VERIFICATION
+                    session.state.question_count = 6
+        
+        asyncio.run(mock_handoff())
+        st.rerun()
     st.header("📄 Candidate Documents")
     uploaded_file = st.file_uploader("Upload your PDF resume", type="pdf")
 
@@ -105,7 +129,7 @@ if prompt := st.chat_input("Say something..."):
                     context_prefix = f"(System Note: The user's resume is located at: {st.session_state.resume_path})\n"
                 
                 # Combine the hidden context with the user's actual message
-                full_prompt = context_prefix + prompt
+                full_prompt = context_prefix + (prompt or "")
                 
                 content = types.Content(role="user", parts=[types.Part(text=full_prompt)])
                 
@@ -133,9 +157,21 @@ if prompt := st.chat_input("Say something..."):
                             except ValueError:
                                 pass  # unknown phase value — leave as-is
                     
-                    if event.is_final_response() and event.content:
+                    if event.is_final_response():
                         response_text = event.content.parts[0].text
+
+                        handoff_signals = [
+                            "Handing off to Verifier", 
+                            "Phase set to VERIFICATION", 
+                            "INTERVIEW_COMPLETE_SIGNAL"
+                        ]
                         
+                        if any(signal in response_text for signal in handoff_signals):
+                            st.session_state.current_phase = InterviewPhase.VERIFICATION
+                            # This ensures the sidebar changes immediately after this response
+                        
+                            return response_text
+                            
                         # ── Text-based handoff detection (fallback) ─────────
                         if "Handing off to Simulation Specialist" in response_text:
                             st.session_state.current_phase = InterviewPhase.INTERVIEW_ACTIVE
@@ -153,6 +189,9 @@ if prompt := st.chat_input("Say something..."):
                         # ── Detect VERIFICATION handoff from Simulation Specialist ──
                         if "Handing off to Verifier" in response_text or                            "Phase set to VERIFICATION" in response_text:
                             st.session_state.current_phase = InterviewPhase.VERIFICATION
+                        if "INTERVIEW_COMPLETE_SIGNAL" in response_text:
+                            st.session_state.current_phase = InterviewPhase.VERIFICATION
+                            st.rerun()
                         
                         return response_text
             

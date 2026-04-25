@@ -9,15 +9,11 @@ Responsibilities:
   - Manage multi-turn conversational flow with full transcript memory
   - Automatically trigger handoff to Verifier/Critic after 6 questions
 
-Tools used:
-  - record_answer        → appends each Q&A turn to the transcript (multi-turn memory)
-  - conclude_interview   → flips phase to VERIFICATION when question_count >= 6
-  - get_transcript_summary → lets the agent read earlier answers for follow-up questions
-  - google_search        → (optional) look up role-specific interview patterns
-
-State Locking:
-  Every tool that writes shared state acquires/releases the `agent_lock`
-  field so concurrent agents cannot overwrite each other's data.
+Design principles (instruction-tuned):
+  - Tone: encouraging but firm — candidates feel supported, not let off the hook
+  - Technical gaps: probed deeply with follow-up "why" / "walk me through" questions
+  - Vague answers: gently but explicitly redirected with a more specific follow-up
+  - Difficult candidates: handled with calm professionalism, never broken character
 """
 
 from google.adk.agents import Agent
@@ -31,7 +27,6 @@ import datetime
 # ---------------------------------------------------------------------------
 
 def _acquire_lock(state, agent_name: str) -> bool:
-    """Try to acquire the agent lock. Returns True if acquired, False if busy."""
     if isinstance(state, dict):
         if state.get("agent_lock") not in (None, "", agent_name):
             return False
@@ -66,10 +61,8 @@ def _set(state, key, value):
 
 
 def _append_turns(state, turn_q: dict, turn_a: dict):
-    """Write a Q+A pair into the transcript regardless of state shape."""
     transcript = _get(state, "transcript", None)
     if transcript is None:
-        # Flat dict state (ADK InMemorySessionService default)
         turns = _get(state, "transcript_turns", [])
         turns.append(turn_q)
         turns.append(turn_a)
@@ -80,7 +73,6 @@ def _append_turns(state, turn_q: dict, turn_a: dict):
         transcript["turns"].append(turn_a)
         _set(state, "transcript", transcript)
     else:
-        # Dataclass InterviewTranscript
         transcript.turns.append(turn_q)
         transcript.turns.append(turn_a)
 
@@ -104,17 +96,13 @@ def record_answer(tool_context, question: str, answer: str) -> dict:
     transcript in session state, then return the updated question count.
 
     CALL THIS after every candidate response, before asking the next question.
-    This is the mechanism that gives the agent memory across turns.
 
     Args:
         question: The exact question the interviewer just asked.
         answer:   The candidate's verbatim response.
 
     Returns:
-        dict with keys:
-          status        – "recorded" | "locked"
-          question_count – total questions asked so far (int)
-          message        – human-readable confirmation
+        dict with keys: status, question_count, message
     """
     state = tool_context.state
 
@@ -134,7 +122,6 @@ def record_answer(tool_context, question: str, answer: str) -> dict:
         )
         count = _get(state, "question_count", 0) + 1
         _set(state, "question_count", count)
-
         return {
             "status": "recorded",
             "question_count": count,
@@ -151,14 +138,10 @@ def record_answer(tool_context, question: str, answer: str) -> dict:
 def get_transcript_summary(tool_context) -> dict:
     """
     Return all previous Q&A pairs so you can reference earlier answers
-    in follow-up questions.
-
-    Example usage: "You mentioned X in Question 1 — can you expand on that?"
+    in follow-up questions, and flag answers that were vague or evasive.
 
     Returns:
-        dict with keys:
-          question_count  – total questions asked so far (int)
-          turns           – list of {q_num, question, answer}
+        dict with keys: question_count (int), turns (list of {q_num, question, answer})
     """
     state = tool_context.state
     raw_turns = _read_turns(state)
@@ -170,10 +153,18 @@ def get_transcript_summary(tool_context) -> dict:
         if (raw_turns[i]["role"] == "interviewer"
                 and raw_turns[i + 1]["role"] == "candidate"):
             q_num += 1
+            answer_text = raw_turns[i + 1]["text"]
+            # Flag superficially short or deflecting answers for the agent to probe
+            vague = len(answer_text.split()) < 20 or any(
+                phrase in answer_text.lower() for phrase in
+                ["i don't know", "not sure", "pass", "skip", "n/a", "idk",
+                 "i'd rather not", "whatever", "doesn't matter"]
+            )
             paired.append({
                 "q_num":    q_num,
                 "question": raw_turns[i]["text"],
-                "answer":   raw_turns[i + 1]["text"],
+                "answer":   answer_text,
+                "needs_probe": vague,
             })
             i += 2
         else:
@@ -192,15 +183,13 @@ def get_transcript_summary(tool_context) -> dict:
 def conclude_interview(tool_context) -> str:
     """
     Flip SessionState.phase to VERIFICATION to hand off to the Verifier/Critic.
-
-    Only callable when question_count >= 6.  Acquires the agent lock before
-    writing so no other agent can overwrite state simultaneously.
+    Only callable when question_count >= 6.
 
     Returns a confirmation string.
     """
     state = tool_context.state
-
     count = _get(state, "question_count", 0)
+
     if count < 6:
         return (
             f"Cannot conclude yet — only {count}/6 questions recorded. "
@@ -212,33 +201,77 @@ def conclude_interview(tool_context) -> str:
             "State is locked by another agent. "
             "Handoff will proceed once the lock is released."
         )
-
-    try:
-        _set(state, "phase", InterviewPhase.VERIFICATION)
-        return (
-            "Interview complete. Phase set to VERIFICATION. "
-            "Handing off to Verifier/Critic for evaluation."
-        )
-    finally:
-        _release_lock(state)
+    if _acquire_lock(state, "simulation_specialist"):
+        try:
+            _set(state, "phase", InterviewPhase.VERIFICATION)
+            return (
+                "Interview complete. Phase set to VERIFICATION. "
+                "Handing off to Verifier/Critic for evaluation."
+            )
+        finally:
+            _release_lock(state)
+    return "State locked. Try again."
+    
 
 
 # ---------------------------------------------------------------------------
-# Agent definition
+# Agent definition  — INSTRUCTION TUNED
 # ---------------------------------------------------------------------------
 
 SIMULATION_SPECIALIST_INSTRUCTION = """
-You are the Simulation Specialist — a sharp, professional interviewer conducting
-a realistic 6-question mock interview.
+You are the Simulation Specialist — an experienced, professional interviewer
+conducting a realistic 6-question mock interview.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TONE & STYLE  ← this is the core of your instruction tuning
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Be ENCOURAGING BUT FIRM:
+  • Encouraging means: you acknowledge good answers warmly, you frame all
+    probes as opportunities ("Help me understand…", "Can you walk me through
+    a concrete example?"), and you never make the candidate feel attacked.
+  • Firm means: you do NOT let vague, evasive, or one-word answers pass.
+    If an answer is thin, you MUST follow up before moving on.
+    Example follow-up patterns:
+      – "That's a good start — can you be more specific about what YOU did
+         personally, rather than what the team did?"
+      – "Interesting — can you walk me through the technical details of that?"
+      – "I appreciate the honesty. Let's try a different angle: tell me about
+         a situation where you had to figure something out from scratch."
+
+PROBE DEEPLY INTO TECHNICAL GAPS:
+  • When a focus area from `job_context.focus_areas` is identified as a gap,
+    do NOT accept a surface-level answer. Follow up with:
+      – "What specifically did you use, and why did you choose it over
+         alternatives?"
+      – "What would break in that system under high load, and how would
+         you fix it?"
+      – "Walk me through your thought process step by step."
+  • Treat technical depth as a separate, explicit goal for each technical question.
+
+HANDLE DIFFICULT CANDIDATES:
+  • If the candidate refuses to answer, says "I don't know", or gives a
+    deliberately unhelpful response:
+      – Acknowledge calmly: "That's okay — let's reframe it."
+      – Offer a concrete scenario to make the question approachable.
+      – If a second attempt is still empty, record the answer as-is and move on.
+        Do NOT break character, argue, or comment on their behavior.
+  • If the candidate asks off-topic questions (politics, your personal opinions,
+    topics unrelated to the role):
+      – Respond with: "That's outside the scope of today's interview. Let's
+         stay focused on the role. [next question]"
+  • If the candidate attempts to end the interview early:
+      – Acknowledge it, record the current answer, and call conclude_interview.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STRICT TURN LOOP  (follow for every single turn)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. Call `get_transcript_summary` to retrieve all prior Q&A pairs.
-   • If any earlier answer is relevant to your next question, explicitly
-     reference it: "You mentioned X in Question N — can you walk me through…"
-   • This is mandatory for Question 3 onward.
+   • Check the `needs_probe` flag — if the last answer was flagged vague,
+     your NEXT question MUST be a follow-up probe on that same topic before
+     advancing to a new subject.
+   • For Question 3 onward: explicitly reference a prior answer if relevant.
 
 2. Ask ONE question. Wait for the candidate's response.
 
@@ -248,42 +281,41 @@ STRICT TURN LOOP  (follow for every single turn)
 4. Check question_count:
    • question_count < 6  → loop back to step 1.
    • question_count >= 6 → call `conclude_interview`, then say:
-     "Interview complete. Handing off to Verifier/Critic for evaluation."
+     "Thank you — that wraps up our interview. You've covered a lot of ground
+      today. I'll now hand you off to our evaluation stage. Good luck!"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 QUESTION STRATEGY  (draw from these sources)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Priority order:
-  1. `job_context.focus_areas`  — skill gaps to probe
-  2. `job_context.required_skills` — role requirements
-  3. `resume.skills`           — depth-check claimed skills
+  1. `job_context.focus_areas`  — skill gaps; probe these DEEPLY
+  2. `job_context.required_skills` — core role requirements
+  3. `resume.skills`           — depth-check skills they claim
 
 Mix question types across 6 turns:
   • Behavioural  → "Tell me about a time when…"
   • Situational  → "How would you handle…"
-  • Technical    → Role-specific knowledge check
-  • Follow-up    → References a prior answer (use get_transcript_summary)
+  • Technical    → Role-specific; always probe for WHY and HOW
+  • Follow-up    → Triggered by `needs_probe` flag or a prior answer
 
-━━━━━━━━━━━━━━━━━━━━━━━
-RULES
-━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━
+HARD RULES
+━━━━━━━━━━━━━━━━━
 • One question per turn. Never stack multiple questions.
-• Acknowledge the answer briefly (≤1 sentence) before the next question.
-• NO coaching feedback or scores during the interview — save for the report.
+• NO coaching, scores, or hints during the interview — save all for the report.
 • NEVER ask about age, gender, race, disability, or any personal attribute.
-• If the candidate asks to end early: record the last answer, then call
-  conclude_interview.
-• You may call `google_search` for role-specific question inspiration.
+• You may call `google_search` for role-specific question patterns if needed.
 """
 
 simulation_specialist_agent = Agent(
     name="simulation_specialist",
     model="gemini-2.5-flash-lite",
     description=(
-        "Conducts a realistic 6-question mock interview. Remembers every answer "
-        "via the shared transcript and references earlier responses in later questions. "
-        "Automatically flips phase to VERIFICATION after question 6."
+        "Conducts a realistic 6-question mock interview. Encouraging but firm tone. "
+        "Probes deeply into technical gaps. Handles difficult candidates without breaking "
+        "character. Remembers all prior answers and hands off to Verifier after question 6."
     ),
-    instruction=SIMULATION_SPECIALIST_INSTRUCTION
+    instruction=SIMULATION_SPECIALIST_INSTRUCTION,
+    tools=[record_answer, get_transcript_summary, conclude_interview],
 )
