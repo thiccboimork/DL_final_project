@@ -1,13 +1,13 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import asyncio
 from agent import get_runner
 from google.genai import types
 from shared_state import InterviewPhase
 import os
 import speech_recognition as sr
-from gtts import gTTS
 import tempfile
-from io import BytesIO
+import json
 
 from agents.context_optimizer import context_optimizer_agent
 from agents.simulation_specialist import simulation_specialist_agent
@@ -91,21 +91,42 @@ def transcribe_uploaded_audio(audio_file) -> str | None:
     return None
 
 
-def generate_tts_audio(text: str) -> bytes | None:
-    try:
-        audio_buffer = BytesIO()
-        gTTS(text=text).write_to_fp(audio_buffer)
-        audio_buffer.seek(0)
-        return audio_buffer.read()
-    except Exception as exc:
-        st.error(f"Text-to-speech failed: {exc}")
-        return None
+def render_tts_controls(message_text: str, index: int) -> None:
+    col_play, col_stop = st.columns([1, 1])
+    with col_play:
+        if st.button("Play response", key=f"play_tts_{index}"):
+            st.session_state.tts_text = message_text
+            st.session_state.tts_nonce = st.session_state.get("tts_nonce", 0) + 1
+            st.rerun()
+    with col_stop:
+        if st.button("Stop audio", key=f"stop_tts_{index}"):
+            st.session_state.tts_text = ""
+            st.session_state.tts_nonce = st.session_state.get("tts_nonce", 0) + 1
+            st.rerun()
 
 
-def render_tts_player(message_text: str) -> None:
-    audio_bytes = generate_tts_audio(message_text)
-    if audio_bytes:
-        st.audio(audio_bytes, format="audio/mp3")
+def render_tts_trigger() -> None:
+    if "tts_nonce" not in st.session_state:
+        return
+
+    safe_text = json.dumps(st.session_state.get("tts_text", ""))
+    nonce = st.session_state.get("tts_nonce", 0)
+    components.html(
+        f"""
+        <script>
+          const nonce = {nonce};
+          const text = {safe_text};
+          window.speechSynthesis.cancel();
+          if (text) {{
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            window.speechSynthesis.speak(utterance);
+          }}
+        </script>
+        """,
+        height=0,
+    )
 
 
 def render_message_history() -> None:
@@ -118,8 +139,7 @@ def render_message_history() -> None:
                 and st.session_state.get("tts_enabled", False)
                 and msg["content"] == st.session_state.get("last_tts_message")
             ):
-                if st.button("Play this reply", key=f"play_tts_{index}"):
-                    render_tts_player(msg["content"])
+                render_tts_controls(msg["content"], index)
 
 
 def interview_has_started() -> bool:
@@ -231,6 +251,8 @@ if "runner" not in st.session_state:
     st.session_state.current_phase = InterviewPhase.CONTEXT_LOADING
     st.session_state.tts_enabled = False
     st.session_state.last_tts_message = None
+    st.session_state.tts_text = ""
+    st.session_state.tts_nonce = 0
 
     asyncio.run(st.session_state.runner.session_service.create_session(
         user_id="user_1", 
@@ -344,6 +366,7 @@ else:
     st.session_state.tts_enabled = False
 
 render_message_history()
+render_tts_trigger()
 
 if prompt := st.chat_input("Say something..."):
     submit_user_prompt(prompt)
