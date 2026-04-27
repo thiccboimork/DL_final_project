@@ -15,6 +15,7 @@ from google.adk.agents import Agent
 from tools.report_generator import generate_report
 from tools.vector_memory import store_user_profile
 from guardrails import scan_report_for_violations
+from observability import log_guardrail_event, log_tool_call
 
 
 def _get_state_value(state, key, default=None):
@@ -64,6 +65,21 @@ def run_guardrail_scan(tool_context, report_text: str, job_role: str = "") -> di
             existing = []
         existing.extend(result["flags"])
         _set_state_value(state, "guardrail_flags", existing)
+
+    log_guardrail_event(
+        state,
+        stage="final_report_scan",
+        verdict=result["verdict"],
+        flags=result["flags"],
+        metadata={"job_role": job_role},
+    )
+    log_tool_call(
+        state,
+        "verifier_critic",
+        "run_guardrail_scan",
+        {"job_role": job_role},
+        {"verdict": result["verdict"], "flag_count": len(result["flags"])},
+    )
 
     return result
 

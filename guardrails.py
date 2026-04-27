@@ -14,6 +14,7 @@ Three layers of protection:
 import re
 from typing import Optional
 
+from observability import DEFAULT_GUARDRAIL_CONFIG
 
 # ---------------------------------------------------------------------------
 # 1. Topic scope — agents must stay within professional interview/resume topics
@@ -146,6 +147,26 @@ def validate_output(text: str, job_role: str) -> list[str]:
         )
 
     return flags
+
+
+def get_guardrail_capabilities() -> dict:
+    """
+    Structured description of the project's explicit guardrail surface.
+    """
+    return {
+        "configurable_policies": DEFAULT_GUARDRAIL_CONFIG.copy(),
+        "blocked_topics": DISALLOWED_TOPICS,
+        "pii_checks": list(PII_PATTERNS.keys()),
+        "prohibited_critique_attributes": PROHIBITED_CRITIQUE_ATTRIBUTES,
+        "severity_map": VIOLATION_SEVERITY.copy(),
+        "evaluation_ready": True,
+        "transparency_features": [
+            "session-level tool logging",
+            "session-level guardrail flag logging",
+            "inspectable severity mapping",
+            "open evaluation script",
+        ],
+    }
 
 
 # ---------------------------------------------------------------------------

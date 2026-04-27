@@ -8,6 +8,7 @@ across sessions. Enables longitudinal feedback tracking.
 
 from typing import Any, Optional
 import json
+from observability import log_tool_call
 
 try:
     import chromadb
@@ -33,6 +34,7 @@ def store_user_profile(
     job_role: str,
     evaluated_skills: dict[str, str],
     session_summary: str,
+    tool_context=None,
 ) -> dict[str, Any]:
     """
     Store or update a candidate's performance profile in vector memory.
@@ -48,7 +50,10 @@ def store_user_profile(
     """
     collection = _get_collection()
     if collection is None:
-        return {"status": "error", "message": "ChromaDB not available."}
+        result = {"status": "error", "message": "ChromaDB not available."}
+        if tool_context:
+            log_tool_call(tool_context.state, "verifier_critic", "store_user_profile", {"user_id": user_id, "job_role": job_role}, result)
+        return result
 
     metadata = {
         "user_id": user_id,
@@ -62,10 +67,13 @@ def store_user_profile(
         metadatas=[metadata],
     )
 
-    return {"status": "success", "user_id": user_id}
+    result = {"status": "success", "user_id": user_id}
+    if tool_context:
+        log_tool_call(tool_context.state, "verifier_critic", "store_user_profile", {"user_id": user_id, "job_role": job_role}, result)
+    return result
 
 
-def retrieve_user_profile(user_id: str) -> dict[str, Any]:
+def retrieve_user_profile(user_id: str, tool_context=None) -> dict[str, Any]:
     """
     Retrieve a candidate's stored profile from vector memory.
 
@@ -77,17 +85,26 @@ def retrieve_user_profile(user_id: str) -> dict[str, Any]:
     """
     collection = _get_collection()
     if collection is None:
-        return {"status": "error", "message": "ChromaDB not available."}
+        result = {"status": "error", "message": "ChromaDB not available."}
+        if tool_context:
+            log_tool_call(tool_context.state, "context_optimizer", "retrieve_user_profile", {"user_id": user_id}, result)
+        return result
 
     results = collection.get(ids=[user_id])
     if not results["documents"]:
-        return {"status": "not_found", "user_id": user_id}
+        result = {"status": "not_found", "user_id": user_id}
+        if tool_context:
+            log_tool_call(tool_context.state, "context_optimizer", "retrieve_user_profile", {"user_id": user_id}, result)
+        return result
 
     metadata = results["metadatas"][0]
-    return {
+    result = {
         "status": "found",
         "user_id": user_id,
         "job_role": metadata.get("job_role", ""),
         "past_skills": json.loads(metadata.get("skills_json", "{}")),
         "past_summary": results["documents"][0],
     }
+    if tool_context:
+        log_tool_call(tool_context.state, "context_optimizer", "retrieve_user_profile", {"user_id": user_id}, {"status": "found", "job_role": result["job_role"]})
+    return result

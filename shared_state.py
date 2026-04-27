@@ -60,6 +60,14 @@ class SessionState:
     transcript: InterviewTranscript = field(default_factory=InterviewTranscript)
     tool_call_log: list[dict] = field(default_factory=list)
     guardrail_flags: list[str] = field(default_factory=list)
+    guardrail_config: dict = field(default_factory=lambda: {
+        "pii_filter": True,
+        "topic_scope": True,
+        "personal_critique_block": True,
+        "off_role_warning": True,
+        "log_tool_calls": True,
+        "log_guardrail_events": True,
+    })
     report_path: Optional[str] = None
 
     # ── State Locking ─────────────────────────────────────────────────────────

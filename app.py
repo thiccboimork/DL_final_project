@@ -11,6 +11,12 @@ import json
 
 from agents.context_optimizer import context_optimizer_agent
 from agents.simulation_specialist import simulation_specialist_agent
+from guardrails import get_guardrail_capabilities, validate_output
+from observability import (
+    DEFAULT_GUARDRAIL_CONFIG,
+    log_guardrail_event,
+    log_tool_call,
+)
 
 st.set_page_config(page_title="Interview Prepper", layout="wide")
 
@@ -42,6 +48,7 @@ async def ensure_session_defaults() -> None:
         "question_count": 0,
         "guardrail_flags": [],
         "tool_call_log": [],
+        "guardrail_config": DEFAULT_GUARDRAIL_CONFIG.copy(),
         "report_path": None,
         "agent_lock": None,
     }
@@ -64,6 +71,54 @@ async def set_interview_phase(phase: InterviewPhase, question_count: int | None 
         _set_state_value(session.state, "question_count", question_count)
 
 
+async def get_live_session():
+    return await st.session_state.runner.session_service.get_session(
+        user_id="user_1",
+        session_id=st.session_state.session_id,
+        app_name="InterviewPrepper"
+    )
+
+
+def append_frontend_log(tool: str, args: dict, result) -> None:
+    session = asyncio.run(get_live_session())
+    if not session:
+        return
+    log_tool_call(session.state, "streamlit_ui", tool, args, result)
+
+
+def run_response_guardrail_scan(response_text: str) -> None:
+    session = asyncio.run(get_live_session())
+    if not session:
+        return
+
+    job_role = ""
+    if isinstance(session.state, dict):
+        job_context = session.state.get("job_context", {})
+        if isinstance(job_context, dict):
+            job_role = job_context.get("job_title", "")
+    else:
+        job_context = getattr(session.state, "job_context", None)
+        if job_context is not None:
+            job_role = getattr(job_context, "job_title", "")
+
+    flags = validate_output(response_text, job_role)
+    if flags:
+        existing = _get_state_value(session.state, "guardrail_flags", [])
+        existing.extend(flags)
+        _set_state_value(session.state, "guardrail_flags", existing[-20:])
+        verdict = "WARN"
+    else:
+        verdict = "PASS"
+
+    log_guardrail_event(
+        session.state,
+        stage="assistant_response",
+        verdict=verdict,
+        flags=flags,
+        metadata={"phase": str(st.session_state.current_phase)},
+    )
+
+
 def transcribe_uploaded_audio(audio_file) -> str | None:
     recognizer = sr.Recognizer()
     temp_path = None
@@ -77,13 +132,34 @@ def transcribe_uploaded_audio(audio_file) -> str | None:
         with sr.AudioFile(temp_path) as source:
             audio_data = recognizer.record(source)
 
-        return recognizer.recognize_google(audio_data)
+        transcript = recognizer.recognize_google(audio_data)
+        append_frontend_log(
+            "transcribe_uploaded_audio",
+            {"filename": audio_file.name},
+            {"status": "success", "transcript_preview": transcript[:120]},
+        )
+        return transcript
     except sr.UnknownValueError:
         st.warning("I couldn't understand that recording. Please try again or type your answer.")
+        append_frontend_log(
+            "transcribe_uploaded_audio",
+            {"filename": audio_file.name},
+            {"status": "error", "message": "unknown_value"},
+        )
     except sr.RequestError as exc:
         st.error(f"Speech recognition is unavailable right now: {exc}")
+        append_frontend_log(
+            "transcribe_uploaded_audio",
+            {"filename": audio_file.name},
+            {"status": "error", "message": str(exc)},
+        )
     except Exception as exc:
         st.error(f"Audio transcription failed: {exc}")
+        append_frontend_log(
+            "transcribe_uploaded_audio",
+            {"filename": audio_file.name},
+            {"status": "error", "message": str(exc)},
+        )
     finally:
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
@@ -97,11 +173,21 @@ def render_tts_controls(message_text: str, index: int) -> None:
         if st.button("Play response", key=f"play_tts_{index}"):
             st.session_state.tts_text = message_text
             st.session_state.tts_nonce = st.session_state.get("tts_nonce", 0) + 1
+            append_frontend_log(
+                "play_tts",
+                {"message_index": index},
+                {"status": "queued", "text_preview": message_text[:120]},
+            )
             st.rerun()
     with col_stop:
         if st.button("Stop audio", key=f"stop_tts_{index}"):
             st.session_state.tts_text = ""
             st.session_state.tts_nonce = st.session_state.get("tts_nonce", 0) + 1
+            append_frontend_log(
+                "stop_tts",
+                {"message_index": index},
+                {"status": "stopped"},
+            )
             st.rerun()
 
 
@@ -148,6 +234,11 @@ def interview_has_started() -> bool:
 
 def submit_user_prompt(prompt_text: str) -> None:
     st.session_state.messages.append({"role": "user", "content": prompt_text})
+    append_frontend_log(
+        "submit_user_prompt",
+        {"phase": str(st.session_state.current_phase)},
+        {"status": "submitted", "prompt_preview": prompt_text[:120]},
+    )
     with st.chat_message("user"):
         st.markdown(prompt_text)
 
@@ -239,6 +330,12 @@ def submit_user_prompt(prompt_text: str) -> None:
             response_placeholder.markdown(full_response)
 
             st.session_state.messages.append({"role": "assistant", "content": full_response})
+            append_frontend_log(
+                "assistant_response",
+                {"phase": str(st.session_state.current_phase)},
+                {"status": "completed", "response_preview": full_response[:160]},
+            )
+            run_response_guardrail_scan(full_response)
             if st.session_state.get("tts_enabled", False):
                 st.session_state.last_tts_message = full_response
             st.rerun()
@@ -321,6 +418,35 @@ with st.sidebar:
         st.progress(progress_val)
     else:
         st.progress(0.0)
+
+    st.header("Transparency")
+    guardrail_capabilities = get_guardrail_capabilities()
+    st.caption("Explicit policies, inspectable logs, and open evaluation hooks.")
+    with st.expander("Guardrail Policies", expanded=False):
+        st.json(guardrail_capabilities["configurable_policies"])
+    with st.expander("Recent Tool Calls", expanded=False):
+        session = asyncio.run(get_live_session())
+        recent_logs = []
+        active_flags = []
+        if session:
+            if isinstance(session.state, dict):
+                recent_logs = session.state.get("tool_call_log", [])[-8:]
+                active_flags = session.state.get("guardrail_flags", [])
+            else:
+                recent_logs = getattr(session.state, "tool_call_log", [])[-8:]
+                active_flags = getattr(session.state, "guardrail_flags", [])
+        if recent_logs:
+            for entry in reversed(recent_logs):
+                st.caption(
+                    f"{entry['timestamp']} | {entry['agent']} | {entry['tool']} | "
+                    f"{entry['result_summary']}"
+                )
+        else:
+            st.caption("No tool calls logged yet.")
+        if active_flags:
+            st.warning("\n".join(active_flags))
+        else:
+            st.caption("No guardrail flags raised in this session.")
 
 # --- MAIN CHAT UI ---
 st.title("🤖 Interview Prepper")

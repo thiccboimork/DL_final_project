@@ -9,6 +9,7 @@ Called by the Verifier/Critic agent after validation passes.
 import os
 import datetime
 from typing import Any
+from observability import log_tool_call
 
 try:
     from reportlab.lib.pagesizes import LETTER
@@ -29,6 +30,7 @@ def generate_report(
     transcript_summary: str,
     guardrail_flags: list[str],
     output_dir: str = "/tmp",
+    tool_context=None,
 ) -> dict[str, Any]:
     """
     Generate a PDF performance report for the candidate.
@@ -47,10 +49,13 @@ def generate_report(
     """
     try:
         if not REPORTLAB_AVAILABLE:
-            return {
+            result = {
                 "status": "error",
                 "message": "reportlab not installed. Run: pip install reportlab",
             }
+            if tool_context:
+                log_tool_call(tool_context.state, "verifier_critic", "generate_report", {"job_role": job_role, "company": company}, result)
+            return result
 
         timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         filename = f"interview_report_{timestamp}.pdf"
@@ -113,14 +118,26 @@ def generate_report(
 
         doc.build(story)
 
-        return {
+        result = {
             "status": "success",
             "report_path": output_path,
             "filename": filename,
         }
+        if tool_context:
+            log_tool_call(
+                tool_context.state,
+                "verifier_critic",
+                "generate_report",
+                {"job_role": job_role, "company": company, "skill_count": len(evaluated_skills)},
+                {"status": "success", "report_path": output_path},
+            )
+        return result
 
     except Exception as e:
-        return {
+        result = {
             "status": "error",
             "message": f"Failed to generate report: {str(e)}",
         }
+        if tool_context:
+            log_tool_call(tool_context.state, "verifier_critic", "generate_report", {"job_role": job_role, "company": company}, result)
+        return result

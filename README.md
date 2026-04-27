@@ -106,6 +106,23 @@ See `guardrails.py` for full list. Summary:
 - No critique of personal characteristics unrelated to job performance
 - Verifier flags and suppresses factually ungrounded or off-role outputs
 
+## Transparency And Differentiation
+
+This project is intentionally designed to be more inspectable and customizable than
+closed commercial interview-prep products and more operationally grounded than many
+academic prototypes.
+
+What distinguishes it:
+- Explicit tool logging: session state records tool invocations, inputs, timestamps, and summarized outputs for auditability.
+- Defined guardrail surface: policy checks for PII leakage, topic drift, personal-attribute critique, and off-role feedback are implemented in code rather than hidden behind vendor defaults.
+- Configurable policy model: guardrail behavior is represented as inspectable policy settings in session state, which makes experimentation and ablation studies possible.
+- Open evaluation path: `evaluation/scoring.py` provides a baseline framework for repeatable testing across handoffs, question coverage, guardrail violations, and report generation.
+- In-app transparency: the Streamlit sidebar exposes recent tool activity and guardrail events so users and evaluators can inspect system behavior during a live run.
+
+Compared with platforms such as LinkedIn Interview Prep or Big Interview, the emphasis
+here is not only mock-interview usability but also observability, controllable safety
+logic, and evaluation-readiness for research or coursework.
+
 ## Evaluation
 
 Run the evaluation suite:

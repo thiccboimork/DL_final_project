@@ -20,6 +20,7 @@ from google.adk.agents import Agent
 from google.adk.tools import google_search
 from shared_state import InterviewPhase
 import datetime
+from observability import log_tool_call
 
 
 # ---------------------------------------------------------------------------
@@ -122,11 +123,19 @@ def record_answer(tool_context, question: str, answer: str) -> dict:
         )
         count = _get(state, "question_count", 0) + 1
         _set(state, "question_count", count)
-        return {
+        result = {
             "status": "recorded",
             "question_count": count,
             "message": f"Turn {count} saved to transcript.",
         }
+        log_tool_call(
+            state,
+            "simulation_specialist",
+            "record_answer",
+            {"question": question[:120], "answer_preview": answer[:120]},
+            result,
+        )
+        return result
     finally:
         _release_lock(state)
 
@@ -170,10 +179,18 @@ def get_transcript_summary(tool_context) -> dict:
         else:
             i += 1
 
-    return {
+    result = {
         "question_count": _get(state, "question_count", 0),
         "turns": paired,
     }
+    log_tool_call(
+        state,
+        "simulation_specialist",
+        "get_transcript_summary",
+        {},
+        {"question_count": result["question_count"], "turn_count": len(paired)},
+    )
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -204,10 +221,18 @@ def conclude_interview(tool_context) -> str:
     if _acquire_lock(state, "simulation_specialist"):
         try:
             _set(state, "phase", InterviewPhase.VERIFICATION)
-            return (
+            result = (
                 "Interview complete. Phase set to VERIFICATION. "
                 "Handing off to Verifier/Critic for evaluation."
             )
+            log_tool_call(
+                state,
+                "simulation_specialist",
+                "conclude_interview",
+                {"question_count": count},
+                result,
+            )
+            return result
         finally:
             _release_lock(state)
     return "State locked. Try again."
