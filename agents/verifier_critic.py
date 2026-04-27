@@ -17,6 +17,19 @@ from tools.vector_memory import store_user_profile
 from guardrails import scan_report_for_violations
 
 
+def _get_state_value(state, key, default=None):
+    if isinstance(state, dict):
+        return state.get(key, default)
+    return getattr(state, key, default)
+
+
+def _set_state_value(state, key, value) -> None:
+    if isinstance(state, dict):
+        state[key] = value
+    else:
+        setattr(state, key, value)
+
+
 # ---------------------------------------------------------------------------
 # ADK tool wrapper: run_guardrail_scan
 # ---------------------------------------------------------------------------
@@ -46,12 +59,11 @@ def run_guardrail_scan(tool_context, report_text: str, job_role: str = "") -> di
     # Write all flags into session state for the evaluator to inspect
     state = tool_context.state
     if result["flags"]:
-        if isinstance(state, dict):
-            existing = state.get("guardrail_flags", [])
-            existing.extend(result["flags"])
-            state["guardrail_flags"] = existing
-        else:
-            state.guardrail_flags.extend(result["flags"])
+        existing = _get_state_value(state, "guardrail_flags", [])
+        if existing is None:
+            existing = []
+        existing.extend(result["flags"])
+        _set_state_value(state, "guardrail_flags", existing)
 
     return result
 

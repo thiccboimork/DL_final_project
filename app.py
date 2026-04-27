@@ -4,11 +4,224 @@ from agent import get_runner
 from google.genai import types
 from shared_state import InterviewPhase
 import os
+import speech_recognition as sr
+from gtts import gTTS
+import tempfile
+from io import BytesIO
 
 from agents.context_optimizer import context_optimizer_agent
 from agents.simulation_specialist import simulation_specialist_agent
 
 st.set_page_config(page_title="Interview Prepper", layout="wide")
+
+
+def _get_state_value(state, key, default=None):
+    if isinstance(state, dict):
+        return state.get(key, default)
+    return getattr(state, key, default)
+
+
+def _set_state_value(state, key, value) -> None:
+    if isinstance(state, dict):
+        state[key] = value
+    else:
+        setattr(state, key, value)
+
+
+async def ensure_session_defaults() -> None:
+    session = await st.session_state.runner.session_service.get_session(
+        user_id="user_1",
+        session_id=st.session_state.session_id,
+        app_name="InterviewPrepper"
+    )
+    if not session:
+        return
+
+    defaults = {
+        "phase": InterviewPhase.CONTEXT_LOADING.value,
+        "question_count": 0,
+        "guardrail_flags": [],
+        "tool_call_log": [],
+        "report_path": None,
+        "agent_lock": None,
+    }
+    for key, value in defaults.items():
+        if _get_state_value(session.state, key, None) is None:
+            _set_state_value(session.state, key, value)
+
+
+async def set_interview_phase(phase: InterviewPhase, question_count: int | None = None) -> None:
+    session = await st.session_state.runner.session_service.get_session(
+        user_id="user_1",
+        session_id=st.session_state.session_id,
+        app_name="InterviewPrepper"
+    )
+    if not session:
+        return
+
+    _set_state_value(session.state, "phase", phase.value)
+    if question_count is not None:
+        _set_state_value(session.state, "question_count", question_count)
+
+
+def transcribe_uploaded_audio(audio_file) -> str | None:
+    recognizer = sr.Recognizer()
+    temp_path = None
+
+    try:
+        suffix = os.path.splitext(audio_file.name)[1] or ".wav"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_audio:
+            temp_audio.write(audio_file.getbuffer())
+            temp_path = temp_audio.name
+
+        with sr.AudioFile(temp_path) as source:
+            audio_data = recognizer.record(source)
+
+        return recognizer.recognize_google(audio_data)
+    except sr.UnknownValueError:
+        st.warning("I couldn't understand that recording. Please try again or type your answer.")
+    except sr.RequestError as exc:
+        st.error(f"Speech recognition is unavailable right now: {exc}")
+    except Exception as exc:
+        st.error(f"Audio transcription failed: {exc}")
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return None
+
+
+def generate_tts_audio(text: str) -> bytes | None:
+    try:
+        audio_buffer = BytesIO()
+        gTTS(text=text).write_to_fp(audio_buffer)
+        audio_buffer.seek(0)
+        return audio_buffer.read()
+    except Exception as exc:
+        st.error(f"Text-to-speech failed: {exc}")
+        return None
+
+
+def render_tts_player(message_text: str) -> None:
+    audio_bytes = generate_tts_audio(message_text)
+    if audio_bytes:
+        st.audio(audio_bytes, format="audio/mp3")
+
+
+def render_message_history() -> None:
+    for index, msg in enumerate(st.session_state.messages):
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+            if (
+                msg["role"] == "assistant"
+                and st.session_state.get("tts_enabled", False)
+                and msg["content"] == st.session_state.get("last_tts_message")
+            ):
+                if st.button("Play this reply", key=f"play_tts_{index}"):
+                    render_tts_player(msg["content"])
+
+
+def interview_has_started() -> bool:
+    return any(msg["role"] == "assistant" for msg in st.session_state.messages)
+
+
+def submit_user_prompt(prompt_text: str) -> None:
+    st.session_state.messages.append({"role": "user", "content": prompt_text})
+    with st.chat_message("user"):
+        st.markdown(prompt_text)
+
+    with st.chat_message("assistant"):
+        with st.status("Agent is working...", expanded=False) as status:
+            response_placeholder = st.empty()
+            full_response = ""
+
+            async def run_chat_logic():
+                await ensure_session_defaults()
+                if st.session_state.current_phase == InterviewPhase.CONTEXT_LOADING:
+                    st.session_state.runner.agent = context_optimizer_agent
+                elif st.session_state.current_phase == InterviewPhase.INTERVIEW_ACTIVE:
+                    st.session_state.runner.agent = simulation_specialist_agent
+                elif st.session_state.current_phase in (
+                    InterviewPhase.VERIFICATION, InterviewPhase.REPORT_READY
+                ):
+                    from agents.verifier_critic import verifier_critic_agent
+                    st.session_state.runner.agent = verifier_critic_agent
+
+                context_prefix = ""
+                if "resume_path" in st.session_state:
+                    context_prefix = (
+                        f"(System Note: The user's resume is located at: "
+                        f"{st.session_state.resume_path})\n"
+                    )
+
+                full_prompt = context_prefix + prompt_text
+                content = types.Content(role="user", parts=[types.Part(text=full_prompt)])
+
+                async for event in st.session_state.runner.run_async(
+                    user_id="user_1",
+                    session_id=st.session_state.session_id,
+                    new_message=content
+                ):
+                    session = await st.session_state.runner.session_service.get_session(
+                        user_id="user_1",
+                        session_id=st.session_state.session_id,
+                        app_name="InterviewPrepper"
+                    )
+                    if session:
+                        raw_phase = (
+                            session.state.get("phase")
+                            if isinstance(session.state, dict)
+                            else getattr(session.state, "phase", None)
+                        )
+                        if raw_phase:
+                            try:
+                                st.session_state.current_phase = InterviewPhase(raw_phase)
+                            except ValueError:
+                                pass
+
+                    if event.is_final_response():
+                        response_text = event.content.parts[0].text
+
+                        handoff_signals = [
+                            "Handing off to Verifier",
+                            "Phase set to VERIFICATION",
+                            "INTERVIEW_COMPLETE_SIGNAL",
+                        ]
+
+                        if any(signal in response_text for signal in handoff_signals):
+                            st.session_state.current_phase = InterviewPhase.VERIFICATION
+                            return response_text
+
+                        if "Handing off to Simulation Specialist" in response_text:
+                            st.session_state.current_phase = InterviewPhase.INTERVIEW_ACTIVE
+                            session = await st.session_state.runner.session_service.get_session(
+                                user_id="user_1",
+                                session_id=st.session_state.session_id,
+                                app_name="InterviewPrepper"
+                            )
+                            if session:
+                                if isinstance(session.state, dict):
+                                    session.state["phase"] = InterviewPhase.INTERVIEW_ACTIVE.value
+                                else:
+                                    session.state.phase = InterviewPhase.INTERVIEW_ACTIVE
+
+                        if "Handing off to Verifier" in response_text or "Phase set to VERIFICATION" in response_text:
+                            st.session_state.current_phase = InterviewPhase.VERIFICATION
+                        if "INTERVIEW_COMPLETE_SIGNAL" in response_text:
+                            st.session_state.current_phase = InterviewPhase.VERIFICATION
+                            st.rerun()
+
+                        return response_text
+
+            full_response = asyncio.run(run_chat_logic())
+            status.update(label="Response complete!", state="complete", expanded=False)
+            response_placeholder.markdown(full_response)
+
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            if st.session_state.get("tts_enabled", False):
+                st.session_state.last_tts_message = full_response
+            st.rerun()
 
 # 1. Initialize ADK Runner and Session in Streamlit
 if "runner" not in st.session_state:
@@ -16,39 +229,31 @@ if "runner" not in st.session_state:
     st.session_state.session_id = "session_123" # Or use a unique ID
     st.session_state.messages = []
     st.session_state.current_phase = InterviewPhase.CONTEXT_LOADING
+    st.session_state.tts_enabled = False
+    st.session_state.last_tts_message = None
 
     asyncio.run(st.session_state.runner.session_service.create_session(
         user_id="user_1", 
         session_id=st.session_state.session_id,
         app_name="InterviewPrepper"
     ))
+    asyncio.run(ensure_session_defaults())
 
 # 2. File Upload for Resume
 # --- SIDEBAR STATUS INDICATOR ---
 with st.sidebar:
     st.divider()
     st.subheader("🛠️ Developer Tools")
+    if st.button("Enter Interview Mode"):
+        st.session_state.current_phase = InterviewPhase.INTERVIEW_ACTIVE
+        asyncio.run(ensure_session_defaults())
+        asyncio.run(set_interview_phase(InterviewPhase.INTERVIEW_ACTIVE))
+        st.rerun()
     if st.button("Skip to Verification"):
         # 1. Update the local Streamlit state
         st.session_state.current_phase = InterviewPhase.VERIFICATION
-        
-        # 2. Update the actual ADK Session State so the Agent knows the phase changed
-        async def mock_handoff():
-            session = await st.session_state.runner.session_service.get_session(
-                user_id="user_1", 
-                session_id=st.session_state.session_id,
-                app_name="InterviewPrepper"
-            )
-            if session:
-                # Manually inject the phase and some dummy transcript data
-                if isinstance(session.state, dict):
-                    session.state["phase"] = InterviewPhase.VERIFICATION.value
-                    session.state["question_count"] = 6
-                else:
-                    session.state.phase = InterviewPhase.VERIFICATION
-                    session.state.question_count = 6
-        
-        asyncio.run(mock_handoff())
+        asyncio.run(ensure_session_defaults())
+        asyncio.run(set_interview_phase(InterviewPhase.VERIFICATION, question_count=6))
         st.rerun()
     st.header("📄 Candidate Documents")
     uploaded_file = st.file_uploader("Upload your PDF resume", type="pdf")
@@ -98,107 +303,47 @@ with st.sidebar:
 # --- MAIN CHAT UI ---
 st.title("🤖 Interview Prepper")
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+if st.session_state.current_phase == InterviewPhase.INTERVIEW_ACTIVE:
+    st.header("Interview Mode")
+    st.caption("Start the interview first, then answer each question by speaking or typing.")
+
+    if not interview_has_started():
+        st.info("Press the button below to have the interviewer ask the first question.")
+        if st.button("Start interview", key="start_interview_button"):
+            submit_user_prompt(
+                "Begin the mock software engineering interview now. "
+                "Introduce the session briefly and ask the first interview question."
+            )
+
+    st.session_state.tts_enabled = st.checkbox(
+        "Read assistant replies aloud",
+        value=st.session_state.get("tts_enabled", False),
+        help="When enabled, each assistant reply gets an audio player you can press play on.",
+    )
+
+    audio_input_available = hasattr(st, "audio_input")
+
+    if audio_input_available:
+        recorded_audio = st.audio_input("Record your answer")
+    else:
+        recorded_audio = st.file_uploader(
+            "Upload a recorded answer",
+            type=["wav", "mp3", "m4a"],
+            key="fallback_audio_uploader",
+            help="Your Streamlit version does not support in-browser recording, so upload an audio file instead.",
+        )
+
+    if recorded_audio is not None:
+        st.audio(recorded_audio)
+        if st.button("Transcribe and send audio", key="send_audio_prompt"):
+            transcript = transcribe_uploaded_audio(recorded_audio)
+            if transcript:
+                st.info(f"Transcript: {transcript}")
+                submit_user_prompt(transcript)
+else:
+    st.session_state.tts_enabled = False
+
+render_message_history()
 
 if prompt := st.chat_input("Say something..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        # We use st.status to show the "thinking" process live
-        with st.status("Agent is working...", expanded=False) as status:
-            response_placeholder = st.empty()
-            full_response = ""
-            
-            async def run_chat_logic():
-                # ── Agent routing based on current phase ──────────────────────
-                if st.session_state.current_phase == InterviewPhase.CONTEXT_LOADING:
-                    st.session_state.runner.agent = context_optimizer_agent
-                elif st.session_state.current_phase == InterviewPhase.INTERVIEW_ACTIVE:
-                    st.session_state.runner.agent = simulation_specialist_agent
-                elif st.session_state.current_phase in (
-                    InterviewPhase.VERIFICATION, InterviewPhase.REPORT_READY
-                ):
-                    from agents.verifier_critic import verifier_critic_agent
-                    st.session_state.runner.agent = verifier_critic_agent
-                context_prefix = ""
-                if "resume_path" in st.session_state:
-                    context_prefix = f"(System Note: The user's resume is located at: {st.session_state.resume_path})\n"
-                
-                # Combine the hidden context with the user's actual message
-                full_prompt = context_prefix + (prompt or "")
-                
-                content = types.Content(role="user", parts=[types.Part(text=full_prompt)])
-                
-                async for event in st.session_state.runner.run_async(
-                    user_id="user_1", 
-                    session_id=st.session_state.session_id, 
-                    new_message=content
-                ):
-                    # Update the UI phase by looking at the actual session state
-                    session = await st.session_state.runner.session_service.get_session(
-                        user_id="user_1", 
-                        session_id=st.session_state.session_id,
-                        app_name="InterviewPrepper"
-                    )
-                    # ── Sync UI phase from session state (handles dict + dataclass) ──
-                    if session:
-                        raw_phase = (
-                            session.state.get("phase")
-                            if isinstance(session.state, dict)
-                            else getattr(session.state, "phase", None)
-                        )
-                        if raw_phase:
-                            try:
-                                st.session_state.current_phase = InterviewPhase(raw_phase)
-                            except ValueError:
-                                pass  # unknown phase value — leave as-is
-                    
-                    if event.is_final_response():
-                        response_text = event.content.parts[0].text
-
-                        handoff_signals = [
-                            "Handing off to Verifier", 
-                            "Phase set to VERIFICATION", 
-                            "INTERVIEW_COMPLETE_SIGNAL"
-                        ]
-                        
-                        if any(signal in response_text for signal in handoff_signals):
-                            st.session_state.current_phase = InterviewPhase.VERIFICATION
-                            # This ensures the sidebar changes immediately after this response
-                        
-                            return response_text
-                            
-                        # ── Text-based handoff detection (fallback) ─────────
-                        if "Handing off to Simulation Specialist" in response_text:
-                            st.session_state.current_phase = InterviewPhase.INTERVIEW_ACTIVE
-                            session = await st.session_state.runner.session_service.get_session(
-                                user_id="user_1",
-                                session_id=st.session_state.session_id,
-                                app_name="InterviewPrepper"
-                            )
-                            if session:
-                                if isinstance(session.state, dict):
-                                    session.state["phase"] = InterviewPhase.INTERVIEW_ACTIVE.value
-                                else:
-                                    session.state.phase = InterviewPhase.INTERVIEW_ACTIVE
-
-                        # ── Detect VERIFICATION handoff from Simulation Specialist ──
-                        if "Handing off to Verifier" in response_text or                            "Phase set to VERIFICATION" in response_text:
-                            st.session_state.current_phase = InterviewPhase.VERIFICATION
-                        if "INTERVIEW_COMPLETE_SIGNAL" in response_text:
-                            st.session_state.current_phase = InterviewPhase.VERIFICATION
-                            st.rerun()
-                        
-                        return response_text
-            
-            # Run the logic and update the UI
-            full_response = asyncio.run(run_chat_logic())
-            status.update(label="Response complete!", state="complete", expanded=False)
-            response_placeholder.markdown(full_response)
-            
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            st.rerun() # Refresh to update sidebar status immediately
+    submit_user_prompt(prompt)
