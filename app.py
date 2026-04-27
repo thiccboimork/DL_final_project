@@ -34,7 +34,43 @@ def _set_state_value(state, key, value) -> None:
         setattr(state, key, value)
 
 
+def ensure_local_observability_defaults() -> None:
+    if "ui_tool_call_log" not in st.session_state:
+        st.session_state.ui_tool_call_log = []
+    if "ui_guardrail_flags" not in st.session_state:
+        st.session_state.ui_guardrail_flags = []
+    if "ui_guardrail_events" not in st.session_state:
+        st.session_state.ui_guardrail_events = []
+    if "ui_guardrail_config" not in st.session_state:
+        st.session_state.ui_guardrail_config = DEFAULT_GUARDRAIL_CONFIG.copy()
+
+
+def append_local_log(agent: str, tool: str, args: dict, result) -> None:
+    ensure_local_observability_defaults()
+    result_summary = result if isinstance(result, str) else str(result)
+    st.session_state.ui_tool_call_log.append({
+        "timestamp": __import__("datetime").datetime.utcnow().isoformat(),
+        "agent": agent,
+        "tool": tool,
+        "args": args,
+        "result_summary": result_summary[:300],
+    })
+    st.session_state.ui_tool_call_log = st.session_state.ui_tool_call_log[-50:]
+
+
+def append_guardrail_event(verdict: str, flags: list[str], metadata: dict) -> None:
+    ensure_local_observability_defaults()
+    st.session_state.ui_guardrail_events.append({
+        "timestamp": __import__("datetime").datetime.utcnow().isoformat(),
+        "verdict": verdict,
+        "flags": flags,
+        "metadata": metadata,
+    })
+    st.session_state.ui_guardrail_events = st.session_state.ui_guardrail_events[-30:]
+
+
 async def ensure_session_defaults() -> None:
+    ensure_local_observability_defaults()
     session = await st.session_state.runner.session_service.get_session(
         user_id="user_1",
         session_id=st.session_state.session_id,
@@ -80,6 +116,7 @@ async def get_live_session():
 
 
 def append_frontend_log(tool: str, args: dict, result) -> None:
+    append_local_log("streamlit_ui", tool, args, result)
     session = asyncio.run(get_live_session())
     if not session:
         return
@@ -106,10 +143,23 @@ def run_response_guardrail_scan(response_text: str) -> None:
         existing = _get_state_value(session.state, "guardrail_flags", [])
         existing.extend(flags)
         _set_state_value(session.state, "guardrail_flags", existing[-20:])
+        st.session_state.ui_guardrail_flags.extend(flags)
+        st.session_state.ui_guardrail_flags = st.session_state.ui_guardrail_flags[-20:]
         verdict = "WARN"
     else:
         verdict = "PASS"
 
+    append_local_log(
+        "guardrail_system",
+        "guardrail_scan",
+        {"stage": "assistant_response", "phase": str(st.session_state.current_phase)},
+        {"verdict": verdict, "flags": flags},
+    )
+    append_guardrail_event(
+        verdict,
+        flags,
+        {"stage": "assistant_response", "phase": str(st.session_state.current_phase)},
+    )
     log_guardrail_event(
         session.state,
         stage="assistant_response",
@@ -350,6 +400,7 @@ if "runner" not in st.session_state:
     st.session_state.last_tts_message = None
     st.session_state.tts_text = ""
     st.session_state.tts_nonce = 0
+    ensure_local_observability_defaults()
 
     asyncio.run(st.session_state.runner.session_service.create_session(
         user_id="user_1", 
@@ -422,19 +473,22 @@ with st.sidebar:
     st.header("Transparency")
     guardrail_capabilities = get_guardrail_capabilities()
     st.caption("Explicit policies, inspectable logs, and open evaluation hooks.")
+    if st.button("Add test log entry", key="add_test_log_entry"):
+        append_frontend_log(
+            "manual_test",
+            {"source": "sidebar_button"},
+            {"status": "ok", "message": "Tool log is live"},
+        )
+        append_guardrail_event(
+            "PASS",
+            [],
+            {"stage": "manual_test", "phase": str(st.session_state.current_phase)},
+        )
+        st.rerun()
     with st.expander("Guardrail Policies", expanded=False):
-        st.json(guardrail_capabilities["configurable_policies"])
+        st.json(st.session_state.get("ui_guardrail_config", guardrail_capabilities["configurable_policies"]))
     with st.expander("Recent Tool Calls", expanded=False):
-        session = asyncio.run(get_live_session())
-        recent_logs = []
-        active_flags = []
-        if session:
-            if isinstance(session.state, dict):
-                recent_logs = session.state.get("tool_call_log", [])[-8:]
-                active_flags = session.state.get("guardrail_flags", [])
-            else:
-                recent_logs = getattr(session.state, "tool_call_log", [])[-8:]
-                active_flags = getattr(session.state, "guardrail_flags", [])
+        recent_logs = st.session_state.get("ui_tool_call_log", [])[-8:]
         if recent_logs:
             for entry in reversed(recent_logs):
                 st.caption(
@@ -443,10 +497,25 @@ with st.sidebar:
                 )
         else:
             st.caption("No tool calls logged yet.")
+    with st.expander("Guardrail Status", expanded=False):
+        active_flags = st.session_state.get("ui_guardrail_flags", [])
+        recent_guardrail_events = st.session_state.get("ui_guardrail_events", [])[-6:]
+        pass_count = sum(1 for event in st.session_state.get("ui_guardrail_events", []) if event["verdict"] == "PASS")
+        warn_count = sum(1 for event in st.session_state.get("ui_guardrail_events", []) if event["verdict"] == "WARN")
+        block_count = sum(1 for event in st.session_state.get("ui_guardrail_events", []) if event["verdict"] == "BLOCK")
+        st.caption(f"Scans: {len(st.session_state.get('ui_guardrail_events', []))} | PASS: {pass_count} | WARN: {warn_count} | BLOCK: {block_count}")
+        if recent_guardrail_events:
+            for event in reversed(recent_guardrail_events):
+                st.caption(
+                    f"{event['timestamp']} | {event['metadata'].get('stage', 'unknown')} | "
+                    f"{event['verdict']} | flags={len(event['flags'])}"
+                )
+        else:
+            st.caption("No guardrail scans recorded yet.")
         if active_flags:
             st.warning("\n".join(active_flags))
         else:
-            st.caption("No guardrail flags raised in this session.")
+            st.caption("No guardrail violations raised in this session.")
 
 # --- MAIN CHAT UI ---
 st.title("🤖 Interview Prepper")
