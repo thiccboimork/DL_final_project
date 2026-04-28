@@ -442,6 +442,70 @@ with st.sidebar:
         st.success(f"Loaded: {uploaded_file.name}")
         # Store the path in session state for the agent to use
         st.session_state.resume_path = os.path.abspath(file_path)
+
+    # ── JSON Test Case Loader ─────────────────────────────────────────────
+    st.header("🧪 JSON Test Case")
+    st.caption("Load a structured test case to bypass live resume upload and pre-populate the session.")
+
+    json_input_mode = st.radio(
+        "Input mode",
+        ["Upload .json file", "Paste JSON"],
+        horizontal=True,
+        key="json_input_mode",
+    )
+
+    loaded_test_case = None
+
+    if json_input_mode == "Upload .json file":
+        json_file = st.file_uploader(
+            "Upload test case (.json)", type="json", key="json_test_uploader"
+        )
+        if json_file is not None:
+            try:
+                json_bytes = json_file.read().decode("utf-8")
+                from evaluation.json_test_loader import load_test_cases_from_string
+                cases = load_test_cases_from_string(json_bytes)
+                loaded_test_case = cases[0]  # use first if list
+                if len(cases) > 1:
+                    st.info(f"File contains {len(cases)} test cases — loaded the first one.")
+            except Exception as e:
+                st.error(f"Failed to parse JSON: {e}")
+    else:
+        json_text = st.text_area(
+            "Paste JSON test case",
+            height=150,
+            placeholder='{"test_case_id": "TC-001", "metadata": {...}, ...}',
+            key="json_test_paste",
+        )
+        if json_text.strip():
+            if st.button("Load Test Case", key="load_json_btn"):
+                try:
+                    from evaluation.json_test_loader import load_test_cases_from_string
+                    cases = load_test_cases_from_string(json_text)
+                    loaded_test_case = cases[0]
+                except Exception as e:
+                    st.error(f"Failed to parse JSON: {e}")
+
+    if loaded_test_case is not None:
+        state, benchmarks = loaded_test_case
+        st.session_state.loaded_test_benchmarks = benchmarks
+
+        # Pre-populate session with parsed resume + job context
+        from evaluation.json_test_loader import session_state_to_agent_context
+        context_msg = session_state_to_agent_context(state, benchmarks)
+        st.session_state.preloaded_context = context_msg
+
+        # Show a summary so the user knows what was loaded
+        with st.expander(f"✅ Loaded: {benchmarks.test_case_id}", expanded=True):
+            st.markdown(f"**Job:** {state.job_context.job_title} @ {state.job_context.company_name}")
+            st.markdown(f"**Difficulty:** {benchmarks.target_difficulty} | **Industry:** {benchmarks.industry}")
+            st.markdown("**Focus areas:**")
+            for fa in benchmarks.expected_focus_areas:
+                st.markdown(f"- {fa}")
+            st.markdown(f"**Must-flag checks:** {len(benchmarks.must_flag)}")
+            st.markdown(f"**PII fields to mask:** {', '.join(benchmarks.masking_required)}")
+        st.success("Test case loaded — start the interview to run the simulation.")
+
     st.header("Project Status")
     
     # Define display names using your Enum members as keys

@@ -27,12 +27,12 @@ from tools.vector_memory import retrieve_user_profile, store_user_profile
 
 # # 1. Set environment variables for Vertex AI
 # os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "TRUE"
-# os.environ["GOOGLE_CLOUD_PROJECT"] =  "project-ebc25092-1828-435a-a1c"
+os.environ["GOOGLE_CLOUD_PROJECT"] =  "project-ebc25092-1828-435a-a1c"
 # os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
 # 1. Use your own API key (NOT Vertex AI)
 # Get your key from: https://makersuite.google.com/app/apikey
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "TRUE"
-os.environ["GOOGLE_CLOUD_PROJECT"] = "project-ebc25092-1828-435a-a1d"
+#os.environ["GOOGLE_CLOUD_PROJECT"] = "project-ebc25092-1828-435a-a1d"
 os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
 
 # 2. Define the specialized Search Agent
