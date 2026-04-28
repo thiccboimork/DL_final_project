@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-005-DATA-SCIENTIST",
+  "metadata": {
+    "target_difficulty": "Entry-Level",
+    "industry": "Data Science / AI",
+    "expected_focus_areas": ["Model deployment (MLOps)", "Feature engineering for messy data", "Stakeholder communication"]
+  },
+  "job_listing": {
+    "job_title": "Associate Data Scientist",
+    "company_name": "Insightsly AI",
+    "company_values": "Data-driven empathy, rigorous validation, and transparency in AI.",
+    "job_description": "Build and deploy predictive models. Must be expert in Python and familiar with MLops pipelines.",
+    "required_skills": ["Python", "SQL", "Machine Learning", "Model Deployment", "Tableau"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Kevin Zhang", "phone": "555-888-4433", "email": "kz.data@university.edu", "address": "900 Campus Drive, Palo Alto, CA" },
+    "summary": "Master's student focused on NLP and Transformer architectures.",
+    "experience": [ { "role": "Graduate Researcher", "company": "AI Lab", "duration": "2023-2025", "responsibilities": "Trained LLMs on proprietary datasets." } ],
+    "skills": ["Python", "PyTorch", "NLP", "Mathematics", "R"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "How would you translate a complex model into a production environment for a non-technical user?",
+      "Can you describe a time when a dataset was extremely messy and how you approached the cleaning process?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Deployment",
+        "response": "I haven't deployed to a full production MLOps pipeline yet, but I've used Flask to create local APIs for my research models. I am eager to learn how your team uses Docker for containerization."
+      },
+      {
+        "question_topic": "Data Cleaning",
+        "response": "In my thesis project, 30% of the data was missing labels. I used a combination of heuristic labeling and KNN-imputation to ensure the model training remained statistically significant."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer ignores the deployment and industry experience gap."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

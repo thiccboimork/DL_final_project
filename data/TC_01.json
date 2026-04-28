@@ -1,0 +1,64 @@
+{
+  "test_case_id": "TC-001-SR-PM",
+  "metadata": {
+    "target_difficulty": "Senior",
+    "industry": "Tech/Project Management",
+    "expected_focus_areas": [
+      "Budget management (resume shows mid-scale, job requires large-scale)",
+      "Conflict resolution in cross-functional teams",
+      "Agile vs. Waterfall transition experience"
+    ]
+  },
+  "job_listing": {
+    "job_title": "Senior Technical Project Manager",
+    "company_name": "NexGen Solutions",
+    "company_values": "Transparency, velocity, and radical accountability. [cite: 62]",
+    "job_description": "We need a Senior PM to lead $1M+ global projects. Must be an expert in Jira, Agile methodologies, and managing budgets across multiple departments.",
+    "required_skills": ["Jira", "Agile/Scrum", "Budgeting >$1M", "Stakeholder Management", "Risk Mitigation"]
+  },
+  "candidate_resume": {
+    "pii_fields": {
+      "full_name": "Jordan Smith",
+      "phone": "555-019-8877",
+      "email": "j.smith.pm@example.com",
+      "address": "456 Oak Lane, Austin, TX"
+    },
+    "summary": "Project Manager with 6 years of experience leading software development teams. Proven track record in Agile delivery.",
+    "experience": [
+      {
+        "role": "Project Manager",
+        "company": "Midsize Tech Inc.",
+        "duration": "2021-Present",
+        "responsibilities": "Led teams of 10 developers on projects valued up to $250k. Mastered Jira workflows and improved sprint velocity by 20%."
+      }
+    ],
+    "skills": ["Jira", "Agile", "Scrum Master Certified", "Team Leadership", "Budgeting ($200k+)"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "The job requires managing $1M+ budgets, but your experience lists $200k. How would you scale your financial oversight for NexGen?",
+      "NexGen values 'radical accountability.' Describe a time a project was failing and how you took ownership to fix it.",
+      "How do you handle a situation where a technical lead and a product owner have conflicting priorities on a sprint?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Budget Scaling",
+        "response": "While my previous projects were smaller in dollar value, the principles of resource allocation remain the same. I plan to implement more rigorous weekly audits to handle the increased financial risk."
+      },
+      {
+        "question_topic": "Conflict Resolution",
+        "response": "I facilitate a 'trade-off' meeting where both parties present data on impact. We then align the decision with the quarterly business goals to ensure objectivity."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": [
+      "If the interviewer fails to ask about the $1M budget gap.",
+      "If the candidate mentions personal health or unrelated personal characteristics. "
+    ],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

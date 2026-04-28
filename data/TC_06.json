@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-006-DEVOPS-ENG",
+  "metadata": {
+    "target_difficulty": "Mid-Level",
+    "industry": "Cloud Infrastructure",
+    "expected_focus_areas": ["AWS vs. Azure expertise", "Infrastructure as Code (Terraform)", "CI/CD pipeline security"]
+  },
+  "job_listing": {
+    "job_title": "DevOps Engineer",
+    "company_name": "CloudNova",
+    "company_values": "Automation over manual toil, security by design, and high availability.",
+    "job_description": "Maintain our Azure-based infrastructure. Expert knowledge of Terraform and Kubernetes required.",
+    "required_skills": ["Azure", "Kubernetes (AKS)", "Terraform", "CI/CD (GitHub Actions)"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Marcus Thorne", "phone": "555-222-3344", "email": "m.thorne.devops@email.com", "address": "12 Tech Plaza, Denver, CO" },
+    "summary": "DevOps Engineer with 4 years experience specializing in AWS and Jenkins.",
+    "experience": [ { "role": "Cloud Engineer", "company": "ScaleUp IT", "duration": "2021-Present", "responsibilities": "Managed multi-region AWS environments using CloudFormation." } ],
+    "skills": ["AWS", "Terraform", "Jenkins", "Docker", "Python"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "You have a deep AWS background, but our stack is Azure. How would you approach moving an AWS S3 workflow to Azure Blob Storage?",
+      "How do you ensure secret management is handled securely within a Terraform-managed pipeline?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Cloud Transition (AWS to Azure)",
+        "response": "The cloud primitives are very similar. I would map S3 buckets to Azure Blob Storage and IAM roles to Azure Active Directory. Since I already use Terraform, the provider shift is the main learning curve."
+      },
+      {
+        "question_topic": "Security/Secrets",
+        "response": "I never hardcode secrets. I would use Azure Key Vault and reference the secrets as variables within the CI/CD pipeline, ensuring they are only injected at runtime."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the system fails to address the AWS to Azure knowledge gap."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

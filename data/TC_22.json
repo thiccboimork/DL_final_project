@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-022-SOLUTIONS-ARCH",
+  "metadata": {
+    "target_difficulty": "Mid-Level",
+    "industry": "Cloud / Sales Engineering",
+    "expected_focus_areas": ["Technical pre-sales", "Building Proof of Concepts (PoCs)", "Bridging sales and engineering"]
+  },
+  "job_listing": {
+    "job_title": "Solutions Architect",
+    "company_name": "CloudBridge",
+    "company_values": "Customer success through technical excellence.",
+    "job_description": "Partner with the sales team to design technical solutions for prospective clients. Must be able to present complex architectures to CTOs.",
+    "required_skills": ["AWS/Azure", "Presentation Skills", "Whiteboarding", "Python/Node.js"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Kelly Zhang", "phone": "555-223-8899", "email": "k.zhang.arch@dev.com", "address": "77 Logic Ln, San Francisco, CA" },
+    "summary": "Backend Developer with 5 years experience. Expert in Python and AWS lambda.",
+    "experience": [ { "role": "Software Engineer", "company": "BackendPro", "duration": "2019-2024", "responsibilities": "Built scalable APIs for high-traffic e-commerce sites." } ],
+    "skills": ["Python", "AWS", "SQL", "Docker"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "This is a client-facing role. Can you describe a time you had to explain a complex technical bug to a non-technical stakeholder?",
+      "How do you balance 'the perfect technical solution' with 'the solution that meets the client's immediate business deadline'?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Communication",
+        "response": "I use analogies. For example, I explained a database bottleneck by comparing it to a one-lane bridge during rush hour. It helped the client understand why we needed to invest in 'widening the road' (scaling)."
+      },
+      {
+        "question_topic": "Business vs Technical",
+        "response": "I focus on the MVP (Minimum Viable Product). I’d rather ship a secure, working 80% solution today that meets their deadline than a 100% solution that arrives a month too late."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer doesn't test the candidate's 'soft skills' and presentation ability."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

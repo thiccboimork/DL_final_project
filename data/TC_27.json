@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-027-EXEC-CHEF",
+  "metadata": {
+    "target_difficulty": "Senior",
+    "industry": "Hospitality / Culinary",
+    "expected_focus_areas": ["Menu engineering and COGS", "Kitchen staff leadership", "Health and safety compliance"]
+  },
+  "job_listing": {
+    "job_title": "Executive Chef",
+    "company_name": "The Gilded Table",
+    "company_values": "Sustainability, culinary innovation, and operational excellence.",
+    "job_description": "Lead a high-volume fine dining kitchen. Responsible for menu design, inventory cost control, and mentoring a staff of 20.",
+    "required_skills": ["Menu Development", "Cost of Goods Sold (COGS) Analysis", "Staff Training", "ServSafe Certified"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Elena Russo", "phone": "555-882-3344", "email": "chef.russo@cuisine.com", "address": "12 Bistro Lane, Napa, CA" },
+    "summary": "Sous Chef at a Michelin-starred restaurant with 8 years of experience in French cuisine.",
+    "experience": [ { "role": "Sous Chef", "company": "Le Petit Etoile", "duration": "2018-2024", "responsibilities": "Managed the line and executed high-end menus. Reduced food waste by 12%." } ],
+    "skills": ["French Cuisine", "Plating", "Inventory Management", "Knife Skills"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Moving from Sous Chef to Executive Chef involves more 'desk work' like COGS analysis. How do you plan to manage the business side of the kitchen?",
+      "Our value is sustainability. How would you incorporate local, seasonal ingredients while keeping food costs under 30%?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Management Transition",
+        "response": "As a Sous Chef, I shadowed our Executive Chef during quarterly audits. I am comfortable with inventory software and understand that a profitable kitchen is what allows for culinary creativity."
+      },
+      {
+        "question_topic": "Sustainability/Costs",
+        "response": "I focus on 'cross-utilization'—using different parts of a single seasonal vegetable across three menu items. This minimizes waste and allows us to buy in bulk from local farmers at a lower price point."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer fails to discuss the candidate's transition from tactical cooking to strategic management."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

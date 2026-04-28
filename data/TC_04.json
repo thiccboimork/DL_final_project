@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-004-CYBER-ANALYST",
+  "metadata": {
+    "target_difficulty": "Mid-Level",
+    "industry": "Information Security",
+    "expected_focus_areas": ["SIEM tool proficiency (Splunk vs. ELK)", "Incident response methodology", "Security certifications"]
+  },
+  "job_listing": {
+    "job_title": "Cybersecurity Analyst II",
+    "company_name": "SecureBank Corp",
+    "company_values": "Zero Trust architecture, data integrity, and proactive threat hunting.",
+    "job_description": "Monitor and respond to threats. Must be proficient in Splunk and have a Security+ certification.",
+    "required_skills": ["Splunk", "Network Forensics", "Phishing Analysis", "Python"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Elena Rodriguez", "phone": "555-123-9876", "email": "e.rod.sec@cybermail.net", "address": "55 Security Blvd, New York, NY" },
+    "summary": "Security professional with 4 years experience. Expert in ELK Stack.",
+    "experience": [ { "role": "SOC Analyst", "company": "Defend-IT LLC", "duration": "2020-2024", "responsibilities": "Monitored traffic using ELK Stack." } ],
+    "skills": ["ELK Stack", "Python", "Nessus", "GSEC Certification"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Our primary SIEM is Splunk. Can you compare your experience with ELK to how you'd use Splunk for log correlation?",
+      "How do you stay updated on the latest zero-day vulnerabilities?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Tooling Gap (Splunk)",
+        "response": "I understand the syntax differences—like Splunk's SPL versus ELK’s Lucene. The underlying logic of aggregating logs and creating alerts is consistent. I can ramp up on Splunk's specific dashboarding within the first week."
+      },
+      {
+        "question_topic": "Security Awareness",
+        "response": "I follow the CISA alerts religiously and participate in several infosec Discord servers where new exploits are discussed in real-time."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the lack of a Security+ certification."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

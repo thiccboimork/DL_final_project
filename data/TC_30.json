@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-030-SOCIAL-MEDIA",
+  "metadata": {
+    "target_difficulty": "Mid-Level",
+    "industry": "Digital Marketing",
+    "expected_focus_areas": ["Community management", "Viral content strategy", "Influencer relations"]
+  },
+  "job_listing": {
+    "job_title": "Social Media Manager",
+    "company_name": "Glow Cosmetics",
+    "company_values": "Inclusion, trend-setting, and authentic engagement.",
+    "job_description": "Manage TikTok and Instagram presence. Create viral-ready content and manage a roster of 50 brand influencers.",
+    "required_skills": ["TikTok/Reels Editing", "Influencer Outreach", "Copywriting", "Trend Analysis"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Chloe Bennett", "phone": "555-009-4455", "email": "chloe.b.mkt@provider.com", "address": "33 Trend St, Los Angeles, CA" },
+    "summary": "Content Creator with 100k+ followers on a personal lifestyle TikTok account.",
+    "experience": [ { "role": "Freelance Creator", "company": "Self-Employed", "duration": "2021-Present", "responsibilities": "Partnered with 10 brands for sponsored posts. Managed all video editing and community engagement." } ],
+    "skills": ["CapCut", "Storytelling", "Analytics", "Brand Partnerships"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Managing a personal brand is different from a corporate brand. How do you plan to adopt the 'Glow Cosmetics' voice instead of your own?",
+      "If an influencer we partner with posts controversial content, what are your immediate steps to protect our brand reputation?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Brand Voice",
+        "response": "I treat a brand voice like a character in a script. I’ll develop a 'Style Guide' for Glow that defines our vocabulary and tone, ensuring the content is consistent even if different people are posting."
+      },
+      {
+        "question_topic": "Crisis Management",
+        "response": "First, I'd pause all scheduled posts. Then, I’d review the contract's 'morality clause' and work with PR to issue a statement that reaffirms our values while distancing the brand from the specific controversy."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the transition from solo freelancer to corporate team member."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

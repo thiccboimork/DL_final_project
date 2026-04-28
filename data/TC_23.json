@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-023-LEGAL-COUNSEL",
+  "metadata": {
+    "target_difficulty": "Senior",
+    "industry": "Corporate Law",
+    "expected_focus_areas": ["IP Law / Patent protection", "Contract negotiation", "Cross-border compliance"]
+  },
+  "job_listing": {
+    "job_title": "In-House Legal Counsel",
+    "company_name": "TechGiant Corp",
+    "company_values": "Innovation protected by integrity.",
+    "job_description": "Oversee intellectual property strategy and manage international contract disputes. Must have 7+ years of experience in corporate law.",
+    "required_skills": ["IP Law", "Contract Negotiation", "JD Degree", "Global Compliance"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Robert Sterling", "phone": "555-000-1111", "email": "r.sterling.esq@law.com", "address": "1 Madison Ave, New York, NY" },
+    "summary": "Senior Associate at a top firm specializing in Family Law and Divorce mediation.",
+    "experience": [ { "role": "Senior Associate", "company": "Sterling & Associates", "duration": "2015-2024", "responsibilities": "Managed 50+ high-net-worth divorce cases. Expert in litigation and mediation." } ],
+    "skills": ["Litigation", "Mediation", "Conflict Resolution", "JD Degree"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Your background is in Family Law. How will you apply your mediation skills to high-stakes corporate IP disputes?",
+      "Can you walk me through your experience managing cross-border legal compliance?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Transition to Corporate",
+        "response": "Mediation is about finding a 'middle ground' regardless of the subject matter. I believe my ability to de-escalate high-emotion divorce cases will translate well into aggressive corporate negotiations."
+      },
+      {
+        "question_topic": "Cross-border Experience",
+        "response": "I haven't handled international corporate compliance yet, but I am an expert at navigating complex state-level regulations and am a quick study on new legal frameworks."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the total lack of IP law experience."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

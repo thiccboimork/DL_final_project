@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-016-IOS-DEV",
+  "metadata": {
+    "target_difficulty": "Mid-Level",
+    "industry": "Mobile Development",
+    "expected_focus_areas": ["SwiftUI vs. UIKit", "App Store deployment process", "Offline data synchronization"]
+  },
+  "job_listing": {
+    "job_title": "iOS Developer",
+    "company_name": "SwiftStream Apps",
+    "company_values": "Design-first, performant code, and seamless UX.",
+    "job_description": "Build high-performance video streaming apps. Expertise in Swift and SwiftUI is mandatory.",
+    "required_skills": ["Swift", "SwiftUI", "Core Data", "RESTful APIs"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Justin Choi", "phone": "555-998-1122", "email": "jchoi.dev@mobilehub.net", "address": "123 App Ave, Los Angeles, CA" },
+    "summary": "Android Developer with 4 years experience in Kotlin. Passionate about learning iOS development.",
+    "experience": [ { "role": "Android Engineer", "company": "DroidWorks", "duration": "2020-2024", "responsibilities": "Maintained 2 major Android apps with 100k+ downloads using Kotlin." } ],
+    "skills": ["Kotlin", "Java", "Android Studio", "Firebase"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "You have extensive Android experience, but this role is 100% iOS. How have you prepared for the move to Swift?",
+      "Can you explain the differences between how Android handles activity lifecycles and how iOS handles view controller lifecycles?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Language Transition (Kotlin to Swift)",
+        "response": "I’ve been building a personal weather app in Swift. I find that Swift and Kotlin share many modern concepts like null safety and closures, which has made the transition smoother than I expected."
+      },
+      {
+        "question_topic": "Platform Differences",
+        "response": "iOS is much more restrictive with background processes compared to Android. I’ve had to learn how to use Background Tasks in iOS to ensure the user experience remains smooth without draining the battery."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the fact that the candidate has no professional iOS experience."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

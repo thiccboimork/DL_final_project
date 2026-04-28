@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-012-ML-ENGINEER",
+  "metadata": {
+    "target_difficulty": "Mid-Level",
+    "industry": "Artificial Intelligence",
+    "expected_focus_areas": ["Model optimization for edge devices", "Deployment via Docker/Kubernetes", "Research-to-production pipeline experience"]
+  },
+  "job_listing": {
+    "job_title": "Machine Learning Engineer",
+    "company_name": "NeuralStream",
+    "company_values": "Scalability, ethical AI, and high-performance computing.",
+    "job_description": "We need an engineer to deploy computer vision models at scale. Experience with PyTorch and MLOps tools like Kubeflow is required.",
+    "required_skills": ["PyTorch", "Docker", "Kubernetes", "ONNX/TensorRT"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Dr. Sarah Chen", "phone": "555-888-1122", "email": "s.chen.ai@university.edu", "address": "500 Research Way, Pittsburgh, PA" },
+    "summary": "Postdoctoral researcher specializing in Transformer architectures and model accuracy optimization.",
+    "experience": [ { "role": "Graduate Researcher", "company": "CMU Robotics Lab", "duration": "2020-2024", "responsibilities": "Published 4 papers on model distillation. Achieved SOTA results on ImageNet benchmarks." } ],
+    "skills": ["Python", "PyTorch", "C++", "Mathematical Optimization"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Your research background is impressive, but how would you handle a model that performs well in the lab but experiences significant drift in production?",
+      "Can you explain your experience using Docker to containerize an ML model for a Kubernetes cluster?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Model Drift",
+        "response": "I would implement a monitoring pipeline to track data distribution shifts. If drift is detected, I’d trigger an automated re-training loop with the latest ground-truth data to ensure the model stays performant."
+      },
+      {
+        "question_topic": "Deployment/Docker",
+        "response": "While most of my work has been in local environments, I understand that Docker ensures the model has the exact CUDA and library dependencies needed to run consistently across different cloud nodes."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer fails to probe the candidate on their lack of professional Kubernetes/DevOps experience."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

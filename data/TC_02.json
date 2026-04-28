@@ -1,0 +1,45 @@
+{
+  "test_case_id": "TC-002-JR-FRONTEND",
+  "metadata": {
+    "target_difficulty": "Entry-Level",
+    "industry": "Software Engineering",
+    "expected_focus_areas": ["Transition from React to Vue.js", "CSS Grid/Flexbox proficiency", "Testing experience (Jest/Cypress)"]
+  },
+  "job_listing": {
+    "job_title": "Junior Frontend Developer",
+    "company_name": "PixelPerfect UI",
+    "company_values": "User-centricity, clean code, and accessibility.",
+    "job_description": "Join our team building dashboards. Must be proficient in Vue.js and Tailwind CSS. Experience with unit testing is a plus.",
+    "required_skills": ["Vue.js", "JavaScript (ES6+)", "Tailwind CSS", "Unit Testing"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Sarah Jenkins", "phone": "555-044-2211", "email": "s.jenkins.dev@email.com", "address": "789 Pine St, Seattle, WA" },
+    "summary": "Recent bootcamp grad with a portfolio of 5 React-based web apps.",
+    "experience": [ { "role": "Frontend Intern", "company": "StartUp Hub", "duration": "3 months", "responsibilities": "Developed UI components using React and styled-components." } ],
+    "skills": ["React", "JavaScript", "HTML/CSS", "Figma", "Git"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Our stack is Vue-based. How do you plan to adapt your React knowledge to learn the Vue ecosystem?",
+      "Can you explain the difference between a prop and a state in a component-based framework?",
+      "How do you ensure your web applications are accessible to users with screen readers?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Framework Transition",
+        "response": "While my primary experience is in React, I’ve been studying the Vue documentation. I find the template system in Vue very intuitive, and I'm confident I can translate my knowledge of state management from Redux to Vuex quickly."
+      },
+      {
+        "question_topic": "State vs Props",
+        "response": "Props are for passing data down from a parent component, while state is for managing data that changes within the component itself. They work similarly across frameworks even if the syntax for updating them is different."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the candidate is not asked about the lack of Vue experience."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-011-SALES-REP",
+  "metadata": {
+    "target_difficulty": "Entry-Level",
+    "industry": "Software Sales (SaaS)",
+    "expected_focus_areas": ["Cold calling/Lead generation", "CRM management", "Resilience and handling rejection"]
+  },
+  "job_listing": {
+    "job_title": "BDR (Business Development Representative)",
+    "company_name": "Streamline SaaS",
+    "company_values": "Grit, curiosity, and high velocity.",
+    "job_description": "Responsible for 50+ outbound calls a day to generate leads. Must use Salesforce to track all activities.",
+    "required_skills": ["Salesforce", "Outbound Prospecting", "Public Speaking", "Persuasion"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Maria Rossi", "phone": "555-111-0000", "email": "m.rossi.sales@email.com", "address": "33 Sunset Blvd, Los Angeles, CA" },
+    "summary": "Former retail floor manager with a history of exceeding sales targets in person.",
+    "experience": [ { "role": "Floor Manager", "company": "High-End Apparel", "duration": "2020-2024", "responsibilities": "Led a team to achieve 110% of monthly sales goals through direct customer engagement." } ],
+    "skills": ["Customer Relations", "Inventory Management", "Point of Sale Systems", "Team Training"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Retail sales are face-to-face, but BDR work is over the phone. How will you build rapport without physical presence?",
+      "How do you handle a day where you receive 50 'no's' in a row?"
+    ],
+    "sample_candidate_responses": [
+      { 
+        "question_topic": "Resilience", 
+        "response": "In retail, I learned that every 'no' is just data. I use it to refine my opening pitch for the next call. Rejection doesn't discourage me; it makes me more curious about why the product didn't fit." 
+      },
+      {
+      "question_topic": "Rapport Building",
+      "response": "Without body language, tone and active listening become my primary tools. I focus on mirroring the prospect's energy and using verbal cues to show I am fully engaged with their specific business pain points."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the transition gap from in-person retail to remote phone sales."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

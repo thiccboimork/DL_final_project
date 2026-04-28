@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-028-CORP-TRAINER",
+  "metadata": {
+    "target_difficulty": "Mid-Level",
+    "industry": "Learning & Development (L&D)",
+    "expected_focus_areas": ["Curriculum design", "LMS administration", "Measuring training ROI"]
+  },
+  "job_listing": {
+    "job_title": "Corporate Training Specialist",
+    "company_name": "BridgePath Consulting",
+    "company_values": "Continuous growth, clarity in communication, and measurable progress.",
+    "job_description": "Design and deliver soft-skills and technical training for client organizations. Must be proficient in Articulate Rise and LMS management.",
+    "required_skills": ["Articulate Rise/Storyline", "LMS (Canvas/Docebo)", "Public Speaking", "Instructional Design"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Julian Banks", "phone": "555-112-9988", "email": "j.banks.train@hrpro.net", "address": "45 Learning Blvd, Chicago, IL" },
+    "summary": "Former High School Teacher with 10 years experience in classroom instruction and lesson planning.",
+    "experience": [ { "role": "Lead Teacher (History)", "company": "Lincoln High", "duration": "2014-2024", "responsibilities": "Developed district-wide social studies curriculum. Integrated digital learning tools for 150 students." } ],
+    "skills": ["Lesson Planning", "Classroom Management", "Public Speaking", "Google Classroom"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Corporate training moves much faster than a school year. How will you adapt your instructional design for busy adults with short attention spans?",
+      "We use Articulate Rise for e-learning. Since you used Google Classroom, how comfortable are you building interactive SCORM-compliant modules?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Adult Learning Theory",
+        "response": "Adults need to know the 'immediate application' of what they are learning. I focus on micro-learning—breaking complex topics into 5-minute modules that provide actionable takeaways they can use the same day."
+      },
+      {
+        "question_topic": "Tooling Transition",
+        "response": "The logic of sequencing content is the same as lesson planning. I have been practicing with a trial version of Articulate and find the block-based design very similar to the web-based tools I used for distance learning."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the transition gap from K-12 education to Corporate L&D."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

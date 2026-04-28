@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-015-TEACHER",
+  "metadata": {
+    "target_difficulty": "Entry-Level",
+    "industry": "Education",
+    "expected_focus_areas": ["Differentiated instruction", "Parent-teacher communication", "Classroom management strategies"]
+  },
+  "job_listing": {
+    "job_title": "3rd Grade Lead Teacher",
+    "company_name": "Oakwood Elementary",
+    "company_values": "Inclusion, lifelong learning, and community engagement.",
+    "job_description": "Design and implement lesson plans for a diverse classroom of 25 students. Focus on literacy and social-emotional learning.",
+    "required_skills": ["State Teaching License", "Lesson Planning", "IEP/504 Knowledge", "Conflict Resolution"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Linda Harris", "phone": "555-881-2233", "email": "linda.h.edu@email.com", "address": "44 School House Blvd, Denver, CO" },
+    "summary": "Recent Master's in Education graduate. Completed student teaching in a diverse urban district.",
+    "experience": [ { "role": "Student Teacher", "company": "Riverside Primary", "duration": "2024-2025", "responsibilities": "Led 2nd-grade math and reading blocks. Assisted in drafting 3 IEPs." } ],
+    "skills": ["Google Classroom", "Early Literacy", "Creative Writing", "Child Psychology"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "How do you adapt a single lesson plan to meet the needs of a student with an IEP and a student who is performing above grade level?",
+      "Describe a time you had to handle a difficult conversation with a parent regarding their child's behavior."
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Differentiated Instruction",
+        "response": "I use 'tiered' assignments. While the core objective is the same, I provide scaffolded worksheets for the student with an IEP and an 'extension' project for the advanced student."
+      },
+      {
+        "question_topic": "Parent Communication",
+        "response": "I always lead with a positive observation first. Then, I present the behavior data objectively and invite the parent to be a partner in the solution, rather than just telling them what is wrong."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer focuses on technical skills unrelated to education."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

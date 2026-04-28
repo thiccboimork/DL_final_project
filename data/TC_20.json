@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-020-CSM",
+  "metadata": {
+    "target_difficulty": "Senior",
+    "industry": "SaaS / Customer Success",
+    "expected_focus_areas": ["Churn reduction strategies", "Upselling/Expansion revenue", "Executive business reviews (EBRs)"]
+  },
+  "job_listing": {
+    "job_title": "Senior Customer Success Manager",
+    "company_name": "ScaleSaaS",
+    "company_values": "Customer-centricity, proactive advocacy, and measurable impact.",
+    "job_description": "Manage a portfolio of $2M+ ARR. Must proactively identify churn risks and lead renewal negotiations with C-suite stakeholders.",
+    "required_skills": ["CRM (Salesforce)", "Churn Analysis", "Public Speaking", "Negotiation"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Rachel Green", "phone": "555-883-9922", "email": "r.green.cs@success.com", "address": "12 Central Perk, New York, NY" },
+    "summary": "Customer Support Lead with 6 years experience in resolving technical tickets and improving CSAT scores.",
+    "experience": [ { "role": "Support Lead", "company": "HelpDesk Pro", "duration": "2018-2024", "responsibilities": "Reduced average ticket response time by 30%. Managed a team of 5 support agents." } ],
+    "skills": ["Zendesk", "Troubleshooting", "Empathy", "Team Leadership"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "Customer Support is reactive, but Success is proactive. How will you shift your mindset to prevent churn before a ticket is even filed?",
+      "Describe a time you had to deliver bad news to an executive-level client regarding a product limitation."
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Reactive vs Proactive",
+        "response": "I plan to monitor product usage data. If I see a client's login frequency drop, I’ll reach out with a personalized training offer to ensure they are getting value before they even consider canceling."
+      },
+      {
+        "question_topic": "Executive Communication",
+        "response": "I lead with honesty but follow up with a workaround. I frame the limitation as a roadmap opportunity and focus the conversation on the goals we *can* achieve in the meantime."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the gap between reactive support and proactive success/sales roles."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

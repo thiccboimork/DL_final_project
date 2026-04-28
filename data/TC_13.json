@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-013-PARALEGAL",
+  "metadata": {
+    "target_difficulty": "Entry-Level",
+    "industry": "Legal Services",
+    "expected_focus_areas": ["Legal research (Westlaw/LexisNexis)", "Case management software", "Confidentiality and ethics"]
+  },
+  "job_listing": {
+    "job_title": "Junior Paralegal",
+    "company_name": "Justice & Associates",
+    "company_values": "Integrity, advocacy, and meticulous detail.",
+    "job_description": "Assist attorneys with litigation prep and filing. Must be proficient in Westlaw and have excellent writing skills.",
+    "required_skills": ["Westlaw", "Legal Writing", "Clio Case Management", "Electronic Filing"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Emma Thompson", "phone": "555-123-4567", "email": "e.thompson.legal@email.com", "address": "12 Law Ln, Chicago, IL" },
+    "summary": "Recent Criminal Justice graduate with strong administrative and research skills. Eager to begin a career in litigation.",
+    "experience": [ { "role": "Administrative Intern", "company": "County Court", "duration": "2023-2024", "responsibilities": "Managed court dockets and assisted the public with filing procedures." } ],
+    "skills": ["Microsoft Office", "Public Speaking", "Data Entry", "Spanish (Fluent)"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "A large portion of this role is legal research. Describe your experience using tools like Westlaw or LexisNexis.",
+      "How do you ensure 100% accuracy and confidentiality when handling sensitive client discovery documents?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Legal Research",
+        "response": "I used Westlaw during my senior thesis to track case law trends. I am comfortable using boolean operators to narrow down search results to the most relevant precedents."
+      },
+      {
+        "question_topic": "Confidentiality",
+        "response": "I follow the 'need-to-know' principle. Documents are never left unattended on desks, and I always ensure encrypted transfer methods are used when sharing files with outside counsel."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the gap in professional case management software (Clio) experience."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

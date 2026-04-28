@@ -1,0 +1,41 @@
+{
+  "test_case_id": "TC-007-MKT-MGR",
+  "metadata": {
+    "target_difficulty": "Mid-Level",
+    "industry": "Marketing & Advertising",
+    "expected_focus_areas": ["SEO/SEM balance", "Budgeting for high-spend campaigns", "Data-driven decision making"]
+  },
+  "job_listing": {
+    "job_title": "Digital Marketing Manager",
+    "company_name": "Lumina Growth Agency",
+    "company_values": "Creativity, transparency, and ROI-driven results.",
+    "job_description": "We need a manager to oversee $50k/month ad spends across Meta and Google. Must have experience in technical SEO and content strategy.",
+    "required_skills": ["Google Ads", "Meta Business Suite", "SEO (Ahrefs/Semrush)", "Google Analytics 4"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "Clara Evans", "phone": "555-333-2211", "email": "clara.evans.mkt@email.com", "address": "101 Creative Way, Portland, OR" },
+    "summary": "Marketing Specialist with 4 years of experience focusing on organic social media and small-scale ad campaigns.",
+    "experience": [ { "role": "Marketing Coordinator", "company": "Local Boutique", "duration": "2021-Present", "responsibilities": "Managed $5k monthly budget and grew Instagram following by 40%." } ],
+    "skills": ["Instagram Marketing", "Content Creation", "Basic SEO", "Canva"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "The role requires managing $50k monthly; your experience lists $5k. How would you adjust your risk management for larger spends?",
+      "Can you walk me through a time you used GA4 data to pivot a failing campaign?"
+    ],
+    "sample_candidate_responses": [
+      { "question_topic": "Budget Scaling", "response": "Scaling requires more frequent monitoring of CPA (Cost Per Acquisition). I would implement tighter automated rules to pause underperforming ads before they waste significant portions of the larger budget." },
+      {
+      "question_topic": "Data-Driven Pivoting",
+      "response": "I noticed a high bounce rate on our landing page through GA4. By analyzing user paths, I realized the 'Shop Now' button was below the fold on mobile. I moved the CTA up, and we saw an immediate 15% increase in conversion without changing the ad creative."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer misses the significant gap in ad-spend management experience."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}

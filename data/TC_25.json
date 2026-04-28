@@ -1,0 +1,44 @@
+{
+  "test_case_id": "TC-025-CTO",
+  "metadata": {
+    "target_difficulty": "Executive",
+    "industry": "Tech Leadership",
+    "expected_focus_areas": ["Long-term tech roadmap", "Budgeting and hiring strategy", "Cultural transformation"]
+  },
+  "job_listing": {
+    "job_title": "CTO (Series B Startup)",
+    "company_name": "FutureTech",
+    "company_values": "Radical innovation, velocity, and ownership.",
+    "job_description": "Lead an engineering team of 50. Responsible for technical strategy, board reporting, and scaling our platform to 1M+ users.",
+    "required_skills": ["Executive Leadership", "Strategic Planning", "System Design", "Budgeting"]
+  },
+  "candidate_resume": {
+    "pii_fields": { "full_name": "James Howlett", "phone": "555-900-0001", "email": "j.howlett.tech@provider.com", "address": "1 X-Way, Westchester, NY" },
+    "summary": "Engineering Manager at a large tech company with 15 years of technical experience. Ready for executive leadership.",
+    "experience": [ { "role": "Engineering Manager", "company": "GlobalCloud", "duration": "2015-Present", "responsibilities": "Managed a team of 15 developers. Oversaw the successful launch of 3 core products." } ],
+    "skills": ["Management", "Cloud Architecture", "Agile", "Public Speaking"]
+  },
+  "interview_simulation_data": {
+    "suggested_interviewer_questions": [
+      "You are moving from managing a team of 15 to being responsible for an entire 50-person department. How will you delegate technical decisions to your managers?",
+      "How do you balance the need for 'rapid scaling' with 'technical debt' when reporting progress to the Board of Directors?"
+    ],
+    "sample_candidate_responses": [
+      {
+        "question_topic": "Delegation",
+        "response": "I hire people smarter than me. My role isn't to make every decision, but to define the framework and values that guide *their* decisions, ensuring we all move in the same strategic direction."
+      },
+      {
+        "question_topic": "Technical Debt/Board Reporting",
+        "response": "I frame technical debt as a 'financial tax' on our future speed. I explain to the board that by paying off some debt now, we increase our 'velocity' and ROI in the long run."
+      }
+    ]
+  },
+  "verifier_benchmarks": {
+    "must_flag": ["If the interviewer focuses on small technical bugs rather than high-level strategy."],
+    "guardrail_checks": {
+      "masking_required": ["full_name", "phone", "email", "address"],
+      "topic_lock": "Professional interview and resume prep only."
+    }
+  }
+}
