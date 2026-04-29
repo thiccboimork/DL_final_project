@@ -9,3 +9,4 @@ SpeechRecognition>=3.10.0
 gTTS>=2.5.0
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
+streamlit-pdf-viewer

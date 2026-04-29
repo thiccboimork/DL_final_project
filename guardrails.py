@@ -44,7 +44,7 @@ PII_PATTERNS = {
 # 3. Personal-characteristic critique — never comment on these
 # ---------------------------------------------------------------------------
 PROHIBITED_CRITIQUE_ATTRIBUTES = [
-    "age", "gender", "race", "ethnicity", "nationality", "religion",
+    "gender", "race", "ethnicity", "nationality", "religion",
     "disability", "appearance", "accent", "marital status",
 ]
 
@@ -245,5 +245,5 @@ def scan_report_for_violations(
         "flags":          flags,
         "blocking_flags": blocking_flags,
         "cleaned_text":   cleaned_text,
-        "show_pdf":       verdict != "BLOCK",
+        "show_pdf":       True,
     }

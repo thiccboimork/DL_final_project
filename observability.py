@@ -58,7 +58,7 @@ def log_tool_call(
 
     result_summary = result if isinstance(result, str) else str(result)
     logs.append({
-        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "agent": agent,
         "tool": tool,
         "args": args,
@@ -80,7 +80,7 @@ def log_guardrail_event(
         logs = []
 
     logs.append({
-        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "agent": "guardrail_system",
         "tool": "guardrail_scan",
         "args": {
