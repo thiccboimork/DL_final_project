@@ -364,6 +364,12 @@ def submit_user_prompt(prompt_text: str) -> None:
                                 pass
 
                     if event.is_final_response():
+                        if event.content and event.content.parts:
+                            response_text = event.content.parts[0].text
+                        else:
+                            print(f"DEBUG - Empty Response Event: {event}")
+                            response_text = "ERROR: Vertex AI returned an empty response. This is likely due to a safety block or quota issue. Check terminal logs."
+                            return response_text
                         response_text = event.content.parts[0].text
 
                         handoff_signals = [
